@@ -8,11 +8,11 @@ jobs:
   test-and-build:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: swift test
       - run: ./Scripts/verify-no-kakao-assets.sh
       - run: ./Scripts/build-release.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: Dual-KakaoTalk-for-macOS
           path: dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.1.zip

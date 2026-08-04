@@ -1,31 +1,33 @@
-# Feasibility and CoreUI Decision
+# 구현 가능성 및 CoreUI 결정
 
-Status: **EXPERIMENTAL BETA — PRIVATE API, FINGERPRINT-GATED**
+[한국어](FEASIBILITY.md) | [English](FEASIBILITY.en.md)
 
-## Verified baseline
+상태: **실험적 베타 — 비공개 API, FINGERPRINT 제한**
 
-The Intel verification machine runs macOS 13.7.8 (22H730). Its official KakaoTalk 26.6.1 (1190) has bundle identifier `com.kakao.KakaoTalkMac`, Team ID `L75WVXX68A`, a valid strict deep signature, and a Universal x86_64/arm64 executable. Exact non-asset compatibility facts are recorded in `compatibility.json`.
+## 검증된 기준 환경
 
-The helper derives the green Dock icon locally with public AppKit APIs. The menu-bar states reside in `Contents/Resources/Assets.car`; macOS provides no public writer API for that compiled format.
+Intel 검증 장비는 macOS 13.7.8(22H730)을 실행합니다. 공식 카카오톡 26.6.1(1190)의 bundle identifier는 `com.kakao.KakaoTalkMac`, Team ID는 `L75WVXX68A`이며 strict deep signature가 유효하고 실행 파일은 Universal x86_64/arm64입니다. asset 이외의 정확한 호환성 정보는 `compatibility.json`에 기록되어 있습니다.
 
-## Current implementation
+helper는 공개 AppKit API로 초록색 Dock 아이콘을 로컬에서 생성합니다. 메뉴 막대 상태는 `Contents/Resources/Assets.car`에 있으며, macOS에는 이 컴파일된 포맷을 쓰는 공개 API가 없습니다.
 
-The project owner explicitly accepted the private-API risk. The beta therefore uses a small Objective-C bridge to undocumented CoreUI classes. It:
+## 현재 구현
 
-- accepts only an exact allowlisted source-catalog SHA-256;
-- addresses only eight named menu icons at 1x and 2x;
-- checks expected dimensions and link structure before mutation;
-- patches a staged copy, never the official app;
-- validates the resulting catalog and requires its hash to change;
-- signs and verifies the completed staged app before replacement;
-- rolls back the prior `KakaoTalkWork.app` on failure.
+프로젝트 소유자가 비공개 API 위험을 명시적으로 수용했습니다. 따라서 베타는 문서화되지 않은 CoreUI class를 호출하는 작은 Objective-C bridge를 사용합니다. 이 bridge는 다음 원칙을 따릅니다.
 
-The bridge declarations are independently implemented from observed runtime selectors and MIT-licensed CoreUI header information. No third-party implementation, Kakao executable, or Kakao asset bytes are vendored.
+- 허용 목록의 원본 catalog SHA-256과 정확히 일치할 때만 처리
+- 1x 및 2x의 이름 지정 메뉴 아이콘 8개만 대상 지정
+- 변경 전 예상 dimension과 link 구조 확인
+- 공식 앱이 아닌 staged copy만 변경
+- 결과 catalog를 검증하고 hash가 변경되었는지 확인
+- 교체 전 완성된 staged app을 서명하고 검증
+- 실패하면 이전 `KakaoTalkWork.app`으로 rollback
 
-## Residual risk
+bridge 선언은 관찰한 runtime selector와 MIT 라이선스 CoreUI header 정보를 바탕으로 독립 구현했습니다. 제3자 구현, 카카오 실행 파일 또는 카카오 asset byte를 vendoring하지 않습니다.
 
-CoreUI is private and may change in any macOS update. Catalog internals may change in any KakaoTalk update. Ad-hoc signing can trigger security prompts. Apple Silicon output is built Universal but remains unverified pending physical-device testing. Every unknown catalog fails closed and is reported through the compatibility issue flow.
+## 잔여 위험
 
-## Follow-up
+CoreUI는 비공개이므로 macOS 업데이트에서 변경될 수 있습니다. Catalog 내부 구조도 카카오톡 업데이트에서 바뀔 수 있습니다. Ad-hoc 서명은 보안 경고를 유발할 수 있습니다. Apple Silicon용 결과물은 Universal로 빌드되지만 실제 기기 테스트 전까지 미검증 상태입니다. 알 수 없는 catalog는 모두 안전하게 실패하며 호환성 이슈 절차로 보고됩니다.
 
-A separately tracked goal researches an independent writer for only the required `Assets.car` subset. It must preserve non-target records byte-for-byte where possible, provide round-trip and corruption tests, and replace the private bridge only after parity is demonstrated. Until then, the private bridge remains clearly labeled experimental.
+## 후속 작업
+
+별도로 추적하는 목표에서 필요한 `Assets.car` 부분만 처리하는 독립 writer를 연구합니다. 가능한 경우 대상 외 record를 byte 단위로 보존하고, round-trip 및 손상 테스트를 제공하며, 동등성이 입증된 뒤에만 비공개 bridge를 대체해야 합니다. 그전까지 비공개 bridge는 실험적 구현으로 명확히 표시합니다.

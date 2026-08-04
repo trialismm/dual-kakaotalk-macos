@@ -1,72 +1,74 @@
-# Apple Silicon Friend Validation
+# Apple Silicon 지인 검증 절차
 
-## Status
+[한국어](APPLE-SILICON-VALIDATION.md) | [English](APPLE-SILICON-VALIDATION.en.md)
 
-**UNVERIFIED.** The release is Universal, but Apple Silicon behavior is not qualified until a friend supplies the evidence below. Do not describe Apple Silicon as supported, verified, or release-qualified before that evidence is reviewed.
+## 상태
 
-This procedure tests the public beta on a personally owned Apple Silicon Mac running macOS 13 or later. It does not require Xcode, developer tools, a Kakao account belonging to anyone else, or any modification of account data, Keychain data, or Dock preferences.
+**미검증(UNVERIFIED).** 릴리스는 Universal이지만, 아래 증거를 지인에게 받아 검토하기 전까지 Apple Silicon 동작은 검증된 것이 아닙니다. 검토 전에는 Apple Silicon을 지원됨, 검증됨 또는 릴리스 적격이라고 설명하지 않습니다.
 
-## Before testing
+이 절차는 macOS 13 이상을 실행하는 개인 소유 Apple Silicon Mac에서 공개 베타를 테스트합니다. Xcode, 개발자 도구, 다른 사람의 카카오 계정, 계정 데이터·키체인 데이터·Dock 환경설정 변경이 필요하지 않습니다.
 
-1. Record the Mac model, macOS version/build, and whether it is arm64 (`uname -m`). Confirm macOS is 13 or later.
-2. Install the official KakaoTalk at exactly `/Applications/KakaoTalk.app`; do not move it or rename it.
-3. Download the release ZIP and its `.manifest.json`. Compute `shasum -a 256 <zip>` and compare it with the manifest `sha256`. This verifies the downloaded bytes against the accompanying manifest; the manifest is CI-generated metadata, not immutable or protected provenance.
-4. Confirm no Xcode is installed or used for this validation. The release must work with only macOS command-line facilities already present on the test Mac.
-5. Preserve the download quarantine attribute for the first Gatekeeper check. Record the result of `xattr -l <zip>` and do not remove quarantine before attempting to open the ZIP and `Install.command`.
+## 테스트 전 준비
 
-## Gatekeeper and quarantine
+1. Mac 모델, macOS 버전/빌드와 arm64 여부(`uname -m`)를 기록합니다. macOS 13 이상인지 확인합니다.
+2. 공식 카카오톡을 정확히 `/Applications/KakaoTalk.app`에 설치합니다. 이동하거나 이름을 바꾸지 않습니다.
+3. 릴리스 ZIP과 `.manifest.json`을 다운로드합니다. `shasum -a 256 <zip>`을 실행하고 manifest의 `sha256`과 비교합니다. 이는 다운로드한 파일을 함께 제공된 manifest와 대조하는 절차이며, manifest는 CI가 생성한 메타데이터일 뿐 변경 불가능하거나 보호된 출처 증명은 아닙니다.
+4. 이 검증에 Xcode를 설치하거나 사용하지 않았는지 확인합니다. 릴리스는 테스트 Mac에 기본 포함된 macOS 명령줄 기능만으로 작동해야 합니다.
+5. 첫 Gatekeeper 확인 전에는 다운로드 격리 속성을 유지합니다. `xattr -l <zip>` 결과를 기록하고 ZIP과 `Install.command`를 열기 전에 격리를 제거하지 않습니다.
 
-1. Extract the ZIP in Finder, then attempt to open `Install.command` normally. Capture the exact Gatekeeper/Finder warning, if any.
-2. If macOS blocks the first launch, use the normal Finder/System Settings user-approved Open flow. Do not disable Gatekeeper globally, run `spctl --master-disable`, or strip quarantine before recording the failure.
-3. Record whether the user-approved retry proceeds. If it does not, stop and collect logs as described below.
-4. Only after the quarantine result is recorded, optionally retry from Terminal with `xattr -d com.apple.quarantine <extracted-folder>` to distinguish quarantine handling from installer behavior. Report both outcomes.
+## Gatekeeper 및 격리 속성
 
-## Installation scenarios
+1. Finder에서 ZIP을 풀고 `Install.command`를 일반적인 방법으로 엽니다. Gatekeeper/Finder 경고가 나타나면 정확한 문구를 기록합니다.
+2. macOS가 첫 실행을 차단하면 Finder 또는 시스템 설정의 정상적인 사용자 승인 열기 절차를 사용합니다. Gatekeeper를 전역 비활성화하거나 `spctl --master-disable`을 실행하거나, 실패를 기록하기 전에 격리를 제거하지 않습니다.
+3. 사용자 승인 후 재시도가 진행되는지 기록합니다. 진행되지 않으면 중단하고 아래 설명대로 로그를 수집합니다.
+4. 격리 결과를 기록한 뒤에만 필요하면 터미널에서 `xattr -d com.apple.quarantine <압축을-푼-폴더>`로 재시도해 격리 문제와 설치 프로그램 문제를 구분합니다. 두 결과를 모두 보고합니다.
 
-Run every scenario using the shipped `Install.command`; no Xcode build, source checkout, or modified helper is allowed.
+## 설치 시나리오
 
-### 1. Fresh install
+모든 시나리오는 배포된 `Install.command`로 실행합니다. Xcode 빌드, 소스 체크아웃 또는 수정된 helper를 사용하지 않습니다.
 
-1. Ensure `/Applications/KakaoTalkWork.app` is absent. Keep `/Applications/KakaoTalk.app` untouched.
-2. Run `Install.command` and accept only normal macOS authorization prompts.
-3. Confirm both fixed paths exist afterward: `/Applications/KakaoTalk.app` and `/Applications/KakaoTalkWork.app`.
-4. Confirm the work copy reports bundle identifier `com.kakao.KakaoTalkWorkMac` and launches without replacing or modifying the personal app.
+### 1. 새 설치
 
-### 2. Update
+1. `/Applications/KakaoTalkWork.app`이 없는지 확인합니다. `/Applications/KakaoTalk.app`은 그대로 둡니다.
+2. `Install.command`를 실행하고 정상적인 macOS 관리자 권한 요청만 승인합니다.
+3. 완료 후 `/Applications/KakaoTalk.app`과 `/Applications/KakaoTalkWork.app`이 모두 존재하는지 확인합니다.
+4. 업무용 복사본의 bundle identifier가 `com.kakao.KakaoTalkWorkMac`이며 개인용 앱을 교체하거나 수정하지 않고 실행되는지 확인합니다.
 
-1. With a working `/Applications/KakaoTalkWork.app` from the fresh-install scenario, run the same `Install.command` again.
-2. Confirm it replaces/updates the work copy successfully while the personal app remains at `/Applications/KakaoTalk.app`.
-3. Confirm both apps launch independently after the update.
+### 2. 업데이트
 
-### 3. No-op / unsupported fingerprint
+1. 새 설치 시나리오에서 만든 정상적인 `/Applications/KakaoTalkWork.app`이 있는 상태로 같은 `Install.command`를 다시 실행합니다.
+2. 개인용 앱은 `/Applications/KakaoTalk.app`에 유지되고 업무용 복사본만 정상 교체/업데이트되는지 확인합니다.
+3. 업데이트 후 두 앱이 독립적으로 실행되는지 확인합니다.
 
-1. Do not alter either app manually. Use an official KakaoTalk build whose `Assets.car` fingerprint is not allowlisted, if available; otherwise record this scenario as not exercised rather than fabricating a result.
-2. Run `Install.command`.
-3. Confirm it fails closed before replacing `/Applications/KakaoTalkWork.app`, identifies the unsupported fingerprint, and opens or offers the compatibility issue URL.
-4. Confirm an existing work copy still launches after the failed attempt.
+### 3. 변경 없음 / 지원하지 않는 fingerprint
 
-## Visual checks
+1. 앱을 수동으로 변경하지 않습니다. 가능하면 `Assets.car` fingerprint가 허용 목록에 없는 공식 카카오톡 빌드를 사용합니다. 불가능하면 결과를 꾸미지 말고 이 시나리오를 실행하지 못했다고 기록합니다.
+2. `Install.command`를 실행합니다.
+3. `/Applications/KakaoTalkWork.app`을 교체하기 전에 안전하게 실패하고, 지원하지 않는 fingerprint를 알리며 호환성 이슈 URL을 열거나 안내하는지 확인합니다.
+4. 실패 후에도 기존 업무용 복사본이 실행되는지 확인합니다.
 
-With both apps running, capture screenshots showing:
+## 화면 확인
 
-- separate Dock entries and the work app's muted-green Dock icon;
-- the personal and work app names, with the work copy identified as KakaoTalkWork;
-- menu-bar normal, selected, and unread/badged states where those states can be produced naturally;
-- no missing, blank, or incorrectly colored menu-bar icons.
+두 앱을 실행한 상태에서 다음을 보여주는 스크린샷을 촬영합니다.
 
-Do not force unread state with private tools or edit compiled catalogs. State explicitly which menu states could not be observed.
+- 별도의 Dock 항목과 업무용 앱의 차분한 초록색 Dock 아이콘
+- 개인용 및 업무용 앱 이름과 KakaoTalkWork로 표시된 업무용 복사본
+- 자연스럽게 재현할 수 있는 메뉴 막대의 기본, 선택 및 읽지 않음/배지 상태
+- 누락되거나 비어 있거나 잘못된 색상의 메뉴 막대 아이콘이 없음
 
-## Evidence and issue flow
+비공개 도구로 읽지 않음 상태를 강제로 만들거나 컴파일된 catalog를 편집하지 않습니다. 확인하지 못한 메뉴 상태를 명시합니다.
 
-On success or failure, attach the following to the compatibility issue template linked by the installer:
+## 증거 및 이슈 등록
 
-- Mac model, macOS version/build, arm64 confirmation, official KakaoTalk version/build, and asset fingerprint;
-- release ZIP filename, computed SHA-256, and manifest contents;
-- Gatekeeper/quarantine observations and whether Xcode was absent;
-- fresh-install, update, and unsupported/no-op results;
-- redacted screenshots of the Dock and observable menu states;
-- relevant installer log from `~/Library/Logs/DualKakaoTalk/install-*.log`.
+성공 또는 실패 시 설치 프로그램이 연결하는 호환성 이슈 양식에 다음을 첨부합니다.
 
-Review logs and screenshots for account names, chat content, phone numbers, and paths before attaching them. For a failure, include the exact terminal/Finder error and preserve the failed work copy for investigation. File the issue through the installer-provided compatibility URL; do not attach Kakao binaries, `Assets.car`, icons, screenshots containing Kakao assets beyond the minimum UI evidence, or other Kakao application files.
+- Mac 모델, macOS 버전/빌드, arm64 확인, 공식 카카오톡 버전/빌드 및 asset fingerprint
+- 릴리스 ZIP 파일명, 계산한 SHA-256 및 manifest 내용
+- Gatekeeper/격리 관찰 결과와 Xcode 미사용 여부
+- 새 설치, 업데이트 및 지원하지 않는 fingerprint/변경 없음 결과
+- Dock 및 확인 가능한 메뉴 상태의 개인정보 제거 스크린샷
+- `~/Library/Logs/DualKakaoTalk/install-*.log`의 관련 설치 로그
 
-Maintainers should mark Apple Silicon qualified only after reproducible evidence covers Gatekeeper/quarantine, a no-Xcode run, fresh install, update, no-op failure behavior, and Dock/menu observations.
+첨부 전 로그와 스크린샷에서 계정명, 대화 내용, 전화번호 및 경로를 확인하고 가립니다. 실패했다면 터미널/Finder의 정확한 오류를 포함하고 조사할 수 있도록 실패한 업무용 복사본을 보존합니다. 설치 프로그램이 제공하는 호환성 URL로 이슈를 등록합니다. 카카오 바이너리, `Assets.car`, 아이콘, 최소한의 UI 증거를 넘어 카카오 자산이 포함된 스크린샷 또는 다른 카카오 애플리케이션 파일은 첨부하지 않습니다.
+
+관리자는 Gatekeeper/격리, Xcode 없는 실행, 새 설치, 업데이트, 변경 없음 실패 동작 및 Dock/메뉴 관찰을 재현 가능한 증거가 모두 다룬 뒤에만 Apple Silicon을 검증 완료로 표시해야 합니다.

@@ -65,7 +65,7 @@ swift test
 ./Scripts/build-release.sh
 ```
 
-The release contains a Universal x86_64 and arm64 helper. `Assets.car` mutation is restricted to an exact allowlisted fingerprint and 16 menu-icon renditions. See [Docs/FEASIBILITY.md](Docs/FEASIBILITY.md) and [Docs/INDEPENDENT-WRITER.md](Docs/INDEPENDENT-WRITER.md) for private-API risks and the independent-writer migration plan.
+The release contains a Universal x86_64 and arm64 helper. `Assets.car` mutation is restricted to an exact allowlisted fingerprint and 16 menu-icon renditions. See [Docs/FEASIBILITY.en.md](Docs/FEASIBILITY.en.md) and [Docs/INDEPENDENT-WRITER.en.md](Docs/INDEPENDENT-WRITER.en.md) for private-API risks and the independent-writer migration plan.
 
 ## Limitations
 

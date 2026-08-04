@@ -53,7 +53,7 @@ The five newest installer logs are retained under:
 ~/Library/Logs/DualKakaoTalk/
 ```
 
-The directory uses mode `0700`, and log files use mode `0600`. For unsupported builds or installation failures, the installer reveals the relevant log and asks before opening a GitHub issue. Logs are never uploaded automatically. Review and remove usernames, private paths, or other personal information before pasting a log into an issue.
+The directory uses mode `0700`, and log files use mode `0600`. Each log records `diagnostic.*` fields for installer version, UTC timestamp, macOS version/build, CPU architecture, helper SHA-256/architectures, KakaoTalk version/build/bundle ID, `Assets.car` SHA-256, result, failure phase, and exit code. User-home and temporary staging paths are automatically replaced. For unsupported builds or installation failures, the installer reveals the log and asks before opening a GitHub issue. Logs are never uploaded automatically. Review the log, then paste it into the issue form's **Structured installer log** field.
 
 ## Build and test from source
 

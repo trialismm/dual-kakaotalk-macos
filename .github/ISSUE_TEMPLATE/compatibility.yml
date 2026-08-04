@@ -1,40 +1,62 @@
-name: KakaoTalk compatibility report
-description: Report a KakaoTalk build that the installer does not recognize.
-title: "[Compatibility] KakaoTalk build "
+name: 설치·호환성 오류 보고 / Installation report
+description: 구조화된 설치 로그를 이용해 설치 실패 또는 지원하지 않는 KakaoTalk 빌드를 보고합니다.
+title: "[Installation] "
 labels: [compatibility]
 body:
   - type: markdown
     attributes:
-      value: Please remove account names, chat content, paths containing your username, and other personal information. Logs never contain KakaoTalk chat data, but review them before attaching.
-  - type: input
-    id: macos
-    attributes:
-      label: macOS version
-      placeholder: 13.7.8
-    validations:
-      required: true
-  - type: dropdown
-    id: architecture
-    attributes:
-      label: Mac architecture
-      options: [Intel, Apple Silicon]
-    validations:
-      required: true
-  - type: input
-    id: kakao
-    attributes:
-      label: KakaoTalk version and build
-      placeholder: 26.6.1 (1190)
-    validations:
-      required: true
-  - type: input
-    id: fingerprint
-    attributes:
-      label: Assets.car fingerprint shown by the installer
-    validations:
-      required: true
+      value: |
+        `~/Library/Logs/DualKakaoTalk/`에서 가장 최근 `install-*.log`를 확인한 뒤 아래에 붙여 넣어 주세요.
+        로그에는 분석에 필요한 installer/macOS/CPU/KakaoTalk 버전·빌드·fingerprint·실패 단계가 `diagnostic.*` 형식으로 기록됩니다.
+        로그는 자동 업로드되지 않습니다. 사용자 이름, 개인 경로, 이메일 등 개인정보가 없는지 제출 전에 확인하세요. 대화 내용이나 계정 정보는 필요하지 않습니다.
+
+        Paste the newest `install-*.log` from `~/Library/Logs/DualKakaoTalk/`. Review it for personal information first. Chat and account data are not required.
+
   - type: textarea
-    id: log
+    id: symptom
     attributes:
-      label: Sanitized installer log
-      description: Confirm that you removed personal data before pasting.
+      label: 발생한 문제 / What happened?
+      description: 기대한 결과와 실제 결과, 실패한 단계 또는 화면을 설명해 주세요.
+      placeholder: Install.command 실행 후 관리자 인증 단계에서 종료됩니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostic_log
+    attributes:
+      label: 구조화된 설치 로그 / Structured installer log
+      description: 가장 최근 로그 전체를 붙여 넣으세요. diagnostic.* 행을 삭제하지 마세요.
+      render: shell
+      placeholder: |
+        diagnostic.schema_version=1
+        diagnostic.installer_version=0.1.0-beta.6
+        diagnostic.macos_version=13.7.8
+        diagnostic.architecture=x86_64
+        diagnostic.failure_phase=administrator_authorization
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reproduced
+    attributes:
+      label: 재실행 결과 / Reproducibility
+      options:
+        - 항상 발생 / Always
+        - 가끔 발생 / Intermittent
+        - 한 번만 발생 / Once
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 오류 화면 / Screenshot
+      description: 필요한 경우 화면을 첨부하세요. 개인정보와 대화 내용은 가려 주세요.
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 개인정보 확인 / Privacy confirmation
+      options:
+        - label: 로그와 화면에서 개인정보, 계정 정보 및 대화 내용을 제거했습니다.
+          required: true

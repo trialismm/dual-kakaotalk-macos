@@ -20,6 +20,6 @@ jobs:
         with:
           name: Dual-KakaoTalk-for-macOS
           path: |
-            dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.5.zip
-            dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.5.zip.manifest.json
+            dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.6.zip
+            dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.6.zip.manifest.json
           if-no-files-found: error

@@ -7,6 +7,10 @@ HELPER="$ROOT/bin/dual-kakaotalk-tool"
 SOURCE="/Applications/KakaoTalk.app"
 DESTINATION="/Applications/KakaoTalkWork.app"
 HASHES="$ROOT/Compatibility/asset-sha256.txt"
+INSTALLER_VERSION="0.1.0-beta.6"
+PHASE="bootstrap"
+FAILURE_RECORDED=0
+ICON=""
 LOG_DIR="$HOME/Library/Logs/DualKakaoTalk"
 mkdir -p -m 700 "$LOG_DIR"
 LOG="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S)-$$.log"
@@ -15,7 +19,7 @@ set -o noclobber
 : > "$LOG"
 chmod 600 "$LOG"
 set +o noclobber
-exec > >(tee -a "$LOG") 2>&1
+exec > >(/usr/bin/sed -E "s|$HOME|~|g; s|/private/tmp/DualKakaoTalk-[^ /]+|<STAGING>|g; s|/var/folders/[^ /]+|<TEMP>|g" | /usr/bin/tee -a "$LOG") 2>&1
 
 LANG_CODE="${LANG:-en}"
 if [[ "$LANG_CODE" == ko* ]]; then
@@ -40,10 +44,40 @@ else
   CANCEL_BUTTON="Cancel"
 fi
 
+diagnostic() {
+  printf 'diagnostic.%s=%s\n' "$1" "$2"
+}
+
+diagnostic schema_version 1
+diagnostic installer_version "$INSTALLER_VERSION"
+diagnostic timestamp_utc "$(/bin/date -u '+%Y-%m-%dT%H:%M:%SZ')"
+diagnostic macos_version "$(/usr/bin/sw_vers -productVersion)"
+diagnostic macos_build "$(/usr/bin/sw_vers -buildVersion)"
+diagnostic architecture "$(/usr/bin/uname -m)"
+diagnostic locale "${LANG:-unknown}"
+
+on_exit() {
+  local status=$?
+  if [[ -n "$ICON" ]]; then rm -f "$ICON"; fi
+  if (( status != 0 && FAILURE_RECORDED == 0 )); then
+    diagnostic result failed
+    diagnostic failure_phase "$PHASE"
+    diagnostic exit_code "$status"
+    diagnostic log_file "$(basename "$LOG")"
+  fi
+}
+trap on_exit EXIT
+
 on_error() {
   local status="${1:-1}" line="${2:-unknown}" choice
   trap - ERR
+  FAILURE_RECORDED=1
   printf 'Installation failed at line %s (exit %s). Log: %s\n' "$line" "$status" "$LOG"
+  diagnostic result failed
+  diagnostic failure_phase "$PHASE"
+  diagnostic exit_code "$status"
+  diagnostic failure_line "$line"
+  diagnostic log_file "$(basename "$LOG")"
   choice="$(/usr/bin/osascript -e "button returned of (display dialog \"$FAILURE\" buttons {\"$CANCEL_BUTTON\", \"$REPORT_BUTTON\"} default button \"$REPORT_BUTTON\" cancel button \"$CANCEL_BUTTON\")" 2>/dev/null || true)"
   if [[ "$choice" == "$REPORT_BUTTON" ]]; then
     /usr/bin/open -R "$LOG" || true
@@ -56,16 +90,24 @@ printf '%s\n' "$START"
 
 major="$(sw_vers -productVersion | cut -d. -f1)"
 if (( major < 13 )); then printf 'macOS Ventura 13 or newer is required.\n'; exit 1; fi
+PHASE="helper_validation"
 [[ -x "$HELPER" ]] || { printf 'Installer helper is missing or not executable.\n'; exit 1; }
 # The user has explicitly opened this installer; clear inherited archive quarantine only from the bundled helper.
 if /usr/bin/xattr -p com.apple.quarantine "$HELPER" >/dev/null 2>&1; then
   /usr/bin/xattr -d com.apple.quarantine "$HELPER"
 fi
 /usr/bin/codesign --verify --strict "$HELPER"
+diagnostic helper_sha256 "$(/usr/bin/shasum -a 256 "$HELPER" | /usr/bin/cut -d' ' -f1)"
+diagnostic helper_architectures "$(/usr/bin/lipo -archs "$HELPER")"
+PHASE="source_validation"
 [[ -d "$SOURCE" && ! -L "$SOURCE" ]] || { printf '%s\n' "$MISSING"; exit 1; }
 assets="$SOURCE/Contents/Resources/Assets.car"
 [[ -f "$assets" && ! -L "$assets" ]] || { printf '%s\n' "$MISSING"; exit 1; }
 hash="$(shasum -a 256 "$assets" | cut -d' ' -f1)"
+diagnostic kakao_version "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$SOURCE/Contents/Info.plist")"
+diagnostic kakao_build "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$SOURCE/Contents/Info.plist")"
+diagnostic kakao_bundle_id "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$SOURCE/Contents/Info.plist")"
+diagnostic assets_sha256 "$hash"
 if ! /usr/bin/grep -Fxq "$hash" "$HASHES"; then
   printf '%s\nAsset fingerprint: %s\n' "$UNSUPPORTED" "$hash"
   choice="$(/usr/bin/osascript -e 'button returned of (display dialog "This KakaoTalk build is not supported. Open a prefilled GitHub compatibility issue?" buttons {"Cancel", "Open Issue"} default button "Open Issue" cancel button "Cancel")' 2>/dev/null || true)"
@@ -75,6 +117,7 @@ if ! /usr/bin/grep -Fxq "$hash" "$HASHES"; then
   exit 1
 fi
 if [[ "$(uname -m)" == arm64 ]]; then printf '%s\n' "$ARM_WARNING"; fi
+PHASE="application_shutdown"
 /usr/bin/osascript -e 'tell application id "com.kakao.KakaoTalkMac" to quit' 2>/dev/null || true
 /usr/bin/osascript -e 'tell application id "com.kakao.KakaoTalkWorkMac" to quit' 2>/dev/null || true
 for _ in {1..20}; do
@@ -86,18 +129,26 @@ if /usr/bin/pgrep -x KakaoTalk >/dev/null || /usr/bin/pgrep -x KakaoTalkWork >/d
   exit 1
 fi
 
-ICON="$TMPDIR/DualKakaoTalkWork-$$.icns"
-trap 'rm -f "$ICON"' EXIT
+PHASE="icon_generation"
+ICON="${TMPDIR:-/tmp}/DualKakaoTalkWork-$$.icns"
 "$HELPER" write-dock-icon "$SOURCE" "$ICON"
+PHASE="staging_preparation"
 # Preparation, catalog mutation and ad-hoc signing happen before administrator authorization.
 REQUEST="$("$HELPER" prepare-install "$hash" "$ICON" "1.0")"
 [[ "$REQUEST" == /private/tmp/DualKakaoTalk-*/* || "$REQUEST" == /tmp/DualKakaoTalk-*/* ]] || { printf 'Invalid staging receipt.\n'; exit 1; }
 quoted_helper="$(printf '%q' "$HELPER")"
 quoted_request="$(printf '%q' "$REQUEST")"
+PHASE="administrator_authorization"
 /usr/bin/osascript -e "do shell script \"$quoted_helper install $quoted_request\" with administrator privileges"
+PHASE="installed_app_verification"
 /usr/bin/codesign --verify --deep --strict "$DESTINATION"
+diagnostic result success
+diagnostic installed_bundle_id "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$DESTINATION/Contents/Info.plist")"
+diagnostic installed_icon_file "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$DESTINATION/Contents/Info.plist")"
+PHASE="launch"
 printf '%s\n' "$DONE"
 open "$SOURCE"
 open -n "$DESTINATION"
+PHASE="complete"
 # Keep only five 0600, privacy-sanitized logs.
 /usr/bin/find "$LOG_DIR" -type f -name 'install-*.log' -print0 | /usr/bin/xargs -0 ls -1t 2>/dev/null | /usr/bin/awk 'NR>5' | while IFS= read -r old; do rm -f "$old"; done

@@ -92,7 +92,8 @@ require_universal_slice "$DIST/bin/dual-kakaotalk-tool" arm64
 cp "$ROOT/Install.command" "$DIST/Install.command"
 chmod +x "$DIST/Install.command"
 cp "$ROOT/Compatibility/asset-sha256.txt" "$DIST/Compatibility/asset-sha256.txt"
-cp "$ROOT/README.md" "$DIST/README.txt"
+cp "$ROOT/README.md" "$DIST/README.ko.txt"
+cp "$ROOT/README.en.md" "$DIST/README.en.txt"
 cp "$ROOT/LICENSE" "$DIST/LICENSE.txt"
 
 codesign --force --sign - "$DIST/bin/dual-kakaotalk-tool"

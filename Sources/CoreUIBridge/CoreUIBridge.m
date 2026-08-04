@@ -294,7 +294,7 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
                 return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas image is unavailable", error);
             }
             CGContextDrawImage(context, CGRectMake(0, 0, canvasSize.width, canvasSize.height), existingImage);
-            CGContextClearRect(context, CGRectInset(destination, -2, -2));
+            CGContextClearRect(context, destination);
         }
 
         CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)rgbaBytes);

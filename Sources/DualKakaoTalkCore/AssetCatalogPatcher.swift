@@ -199,30 +199,30 @@ public enum AssetCatalogPatcher {
     }
     private static func validatesTransformedPixels(_ actual: Data, expected: Data) -> Bool {
         guard actual.count == expected.count, actual.count.isMultiple(of: 4) else { return false }
-        var greenPixelCount = 0
         return actual.withUnsafeBytes { actualRaw in
-            let a = actualRaw.bindMemory(to: UInt8.self)
-            for offset in stride(from: 0, to: a.count, by: 4) {
-                let alpha = a[offset + 3]
-                if alpha == 0 { continue }
-                let red = unpremultiply(a[offset], alpha: alpha)
-                let green = unpremultiply(a[offset + 1], alpha: alpha)
-                let blue = unpremultiply(a[offset + 2], alpha: alpha)
-                let tolerance = max(2, Int(255 / max(1, Int(alpha))))
-                let isGreen = abs(Int(red) - Int(ColorTransformer.menuBarGreen.red)) <= tolerance &&
-                    abs(Int(green) - Int(ColorTransformer.menuBarGreen.green)) <= tolerance &&
-                    abs(Int(blue) - Int(ColorTransformer.menuBarGreen.blue)) <= tolerance
-                let isNotificationRed = red >= 153 && green < 115 && blue < 115
-                if !isGreen && !isNotificationRed { return false }
-                if isGreen { greenPixelCount += 1 }
+            expected.withUnsafeBytes { expectedRaw in
+                let a = actualRaw.bindMemory(to: UInt8.self)
+                let e = expectedRaw.bindMemory(to: UInt8.self)
+                for offset in stride(from: 0, to: a.count, by: 4) {
+                    let actualAlpha = a[offset + 3]
+                    let expectedAlpha = e[offset + 3]
+                    guard abs(Int(actualAlpha) - Int(expectedAlpha)) <= 2 else { return false }
+                    if actualAlpha == 0 && expectedAlpha == 0 { continue }
+                    let tolerance = max(3, Int(255 / max(1, Int(min(actualAlpha, expectedAlpha)))))
+                    for component in 0..<3 {
+                        let actualStraight = unpremultiply(a[offset + component], alpha: actualAlpha)
+                        let expectedStraight = unpremultiply(e[offset + component], alpha: expectedAlpha)
+                        guard abs(Int(actualStraight) - Int(expectedStraight)) <= tolerance else { return false }
+                    }
+                }
+                return true
             }
-            return greenPixelCount > 0
         }
     }
     private static func nonTargetMetadata(_ renditions: [AssetCatalogRendition]) -> [String] {
         renditions
             .filter { !allowedNames.contains($0.name) }
-            .map { "\($0.name)/\($0.scale)/\($0.width)x\($0.height)/\($0.hasInternalLink)" }
+            .map { "\($0.name)/\($0.scale)/\($0.width)x\($0.height)/\($0.hasInternalLink)/\(SHA256.data($0.rgbaData))" }
             .sorted()
     }
 }

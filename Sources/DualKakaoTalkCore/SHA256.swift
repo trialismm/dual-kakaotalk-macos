@@ -12,4 +12,8 @@ public enum SHA256 {
         }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
+
+    public static func data(_ data: Data) -> String {
+        CryptoKit.SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
 }

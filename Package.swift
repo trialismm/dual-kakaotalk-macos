@@ -10,7 +10,16 @@ let package = Package(
         .library(name: "DualKakaoTalkCore", targets: ["DualKakaoTalkCore"]),
     ],
     targets: [
-        .target(name: "DualKakaoTalkCore"),
+        .target(
+            name: "CoreUIBridge",
+            path: "Sources/CoreUIBridge",
+            publicHeadersPath: "include",
+            linkerSettings: [
+                .linkedFramework("CoreUI", .when(platforms: [.macOS])),
+                .unsafeFlags(["-F/System/Library/PrivateFrameworks"], .when(platforms: [.macOS])),
+            ]
+        ),
+        .target(name: "DualKakaoTalkCore", dependencies: ["CoreUIBridge"]),
         .executableTarget(
             name: "DualKakaoTalkTool",
             dependencies: ["DualKakaoTalkCore"]

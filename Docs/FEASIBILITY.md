@@ -1,25 +1,31 @@
-# Feasibility Gate
+# Feasibility and CoreUI Decision
 
-Status: **BLOCKED — no release artifact**
+Status: **EXPERIMENTAL BETA — PRIVATE API, FINGERPRINT-GATED**
 
-## Evidence collected
+## Verified baseline
 
-The current test machine is an Intel Mac running macOS 13.7.8 (22H730). The installed official app is KakaoTalk 26.6.1 (1190), bundle identifier `com.kakao.KakaoTalkMac`, Team ID `L75WVXX68A`. Its strict deep code-signature verification succeeds. The exact compatibility facts are recorded in `compatibility.json`; no Kakao binary or asset bytes are stored in this repository.
+The Intel verification machine runs macOS 13.7.8 (22H730). Its official KakaoTalk 26.6.1 (1190) has bundle identifier `com.kakao.KakaoTalkMac`, Team ID `L75WVXX68A`, a valid strict deep signature, and a Universal x86_64/arm64 executable. Exact non-asset compatibility facts are recorded in `compatibility.json`.
 
-The public AppKit/ImageIO prototype can recolor a locally supplied image without uploading or bundling it. Dock recoloring is technically feasible by creating a local `.icns` and applying local Finder icon metadata.
+The helper derives the green Dock icon locally with public AppKit APIs. The menu-bar states reside in `Contents/Resources/Assets.car`; macOS provides no public writer API for that compiled format.
 
-The menu-bar states are compiled renditions in the app's `Contents/Resources/Assets.car`. The required logical assets include normal, dark, logged-out, pressed, and unread-message variants at 1× and 2× scales.
+## Current implementation
 
-## Stop-ship result
+The project owner explicitly accepted the private-API risk. The beta therefore uses a small Objective-C bridge to undocumented CoreUI classes. It:
 
-macOS provides no public API for modifying a compiled `Assets.car`. The successful local experiment performed before this repository existed used undocumented CoreUI classes through a third-party wrapper. That path violates the approved constraint prohibiting private CoreUI APIs. `assetutil` can inspect the catalog when Xcode is installed but cannot write it, and requiring Xcode on end-user machines violates the distribution contract.
+- accepts only an exact allowlisted source-catalog SHA-256;
+- addresses only eight named menu icons at 1x and 2x;
+- checks expected dimensions and link structure before mutation;
+- patches a staged copy, never the official app;
+- validates the resulting catalog and requires its hash to change;
+- signs and verifies the completed staged app before replacement;
+- rolls back the prior `KakaoTalkWork.app` on failure.
 
-No independently implemented, reviewed writer for the necessary catalog subset has been proven on this catalog. Rebuilding the entire catalog from extracted Kakao assets would also create unnecessary derivative copies and requires unavailable runtime build tooling.
+The bridge declarations are independently implemented from observed runtime selectors and MIT-licensed CoreUI header information. No third-party implementation, Kakao executable, or Kakao asset bytes are vendored.
 
-Therefore the menu-bar requirement cannot currently be implemented under the approved constraints. The project must not ship an installer, Universal helper, or GitHub Release until one of these decisions is approved in a new plan:
+## Residual risk
 
-1. allow a documented, narrowly scoped private-CoreUI implementation with explicit macOS/Kakao allowlists and residual-risk disclosure;
-2. remove the menu-bar recoloring requirement; or
-3. provide a reviewed independent `Assets.car` writer and validator.
+CoreUI is private and may change in any macOS update. Catalog internals may change in any KakaoTalk update. Ad-hoc signing can trigger security prompts. Apple Silicon output is built Universal but remains unverified pending physical-device testing. Every unknown catalog fails closed and is reported through the compatibility issue flow.
 
-The current repository intentionally fails closed rather than silently shipping Dock-only behavior.
+## Follow-up
+
+A separately tracked goal researches an independent writer for only the required `Assets.car` subset. It must preserve non-target records byte-for-byte where possible, provide round-trip and corruption tests, and replace the private bridge only after parity is demonstrated. Until then, the private bridge remains clearly labeled experimental.

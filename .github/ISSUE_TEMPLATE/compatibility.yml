@@ -1,0 +1,40 @@
+name: KakaoTalk compatibility report
+description: Report a KakaoTalk build that the installer does not recognize.
+title: "[Compatibility] KakaoTalk build "
+labels: [compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: Please remove account names, chat content, paths containing your username, and other personal information. Logs never contain KakaoTalk chat data, but review them before attaching.
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: 13.7.8
+    validations:
+      required: true
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Mac architecture
+      options: [Intel, Apple Silicon]
+    validations:
+      required: true
+  - type: input
+    id: kakao
+    attributes:
+      label: KakaoTalk version and build
+      placeholder: 26.6.1 (1190)
+    validations:
+      required: true
+  - type: input
+    id: fingerprint
+    attributes:
+      label: Assets.car fingerprint shown by the installer
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Sanitized installer log
+      description: Confirm that you removed personal data before pasting.

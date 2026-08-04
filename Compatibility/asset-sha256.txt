@@ -1,0 +1,2 @@
+# KakaoTalk 26.6.1 (1190), verified on Intel macOS 13.7.8
+383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416

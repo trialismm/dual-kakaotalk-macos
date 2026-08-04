@@ -7,7 +7,7 @@ HELPER="$ROOT/bin/dual-kakaotalk-tool"
 SOURCE="/Applications/KakaoTalk.app"
 DESTINATION="/Applications/KakaoTalkWork.app"
 HASHES="$ROOT/Compatibility/asset-sha256.txt"
-INSTALLER_VERSION="0.1.0-beta.6"
+INSTALLER_VERSION="0.1.0-beta.7"
 PHASE="bootstrap"
 FAILURE_RECORDED=0
 ICON=""
@@ -136,10 +136,14 @@ PHASE="staging_preparation"
 # Preparation, catalog mutation and ad-hoc signing happen before administrator authorization.
 REQUEST="$("$HELPER" prepare-install "$hash" "$ICON" "1.0")"
 [[ "$REQUEST" == /private/tmp/DualKakaoTalk-*/* || "$REQUEST" == /tmp/DualKakaoTalk-*/* ]] || { printf 'Invalid staging receipt.\n'; exit 1; }
-quoted_helper="$(printf '%q' "$HELPER")"
-quoted_request="$(printf '%q' "$REQUEST")"
 PHASE="administrator_authorization"
-/usr/bin/osascript -e "do shell script \"$quoted_helper install $quoted_request\" with administrator privileges"
+/usr/bin/osascript - "$HELPER" "$REQUEST" <<'APPLESCRIPT'
+on run argv
+  set helperPath to item 1 of argv
+  set requestPath to item 2 of argv
+  do shell script (quoted form of helperPath & " install " & quoted form of requestPath) with administrator privileges
+end run
+APPLESCRIPT
 PHASE="installed_app_verification"
 /usr/bin/codesign --verify --deep --strict "$DESTINATION"
 diagnostic result success

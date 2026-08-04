@@ -24,6 +24,9 @@ if [[ "$LANG_CODE" == ko* ]]; then
   ARM_WARNING="Apple Silicon에서는 이 실험적 빌드를 확인하지 못했습니다. 계속 진행하지만 주의하세요."
   BUSY="카카오톡 두 앱을 모두 종료한 뒤 설치 프로그램을 다시 실행하세요."
   DONE="완료되었습니다. 개인용과 업무용 카카오톡을 실행합니다."
+  FAILURE="설치에 실패했습니다. 개인정보를 확인한 뒤 로그와 함께 GitHub 이슈를 등록하시겠습니까?"
+  REPORT_BUTTON="이슈 등록"
+  CANCEL_BUTTON="취소"
 else
   START="Starting Dual KakaoTalk installation."
   MISSING="Install the official KakaoTalk app at /Applications/KakaoTalk.app, then run this installer again."
@@ -31,7 +34,23 @@ else
   ARM_WARNING="This experimental build is unverified on Apple Silicon. Continuing with caution."
   BUSY="Quit both KakaoTalk applications and run the installer again."
   DONE="Installation complete. Opening personal and work KakaoTalk."
+  FAILURE="Installation failed. Review the log for personal information, then open a GitHub issue?"
+  REPORT_BUTTON="Open Issue"
+  CANCEL_BUTTON="Cancel"
 fi
+
+on_error() {
+  local status="${1:-1}" line="${2:-unknown}" choice
+  trap - ERR
+  printf 'Installation failed at line %s (exit %s). Log: %s\n' "$line" "$status" "$LOG"
+  choice="$(/usr/bin/osascript -e "button returned of (display dialog \"$FAILURE\" buttons {\"$CANCEL_BUTTON\", \"$REPORT_BUTTON\"} default button \"$REPORT_BUTTON\" cancel button \"$CANCEL_BUTTON\")" 2>/dev/null || true)"
+  if [[ "$choice" == "$REPORT_BUTTON" ]]; then
+    /usr/bin/open -R "$LOG" || true
+    /usr/bin/open 'https://github.com/hubeen/dual-kakaotalk-macos/issues/new?template=compatibility.yml' || true
+  fi
+  exit "$status"
+}
+trap 'on_error $? $LINENO' ERR
 printf '%s\n' "$START"
 
 major="$(sw_vers -productVersion | cut -d. -f1)"

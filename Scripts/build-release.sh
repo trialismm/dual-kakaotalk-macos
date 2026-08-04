@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 BUILD="$ROOT/.build-release"
 DIST="$ROOT/dist/Dual-KakaoTalk-for-macOS"
-ARTIFACT="$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.2.zip"
+ARTIFACT="$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.3.zip"
 MANIFEST="$ARTIFACT.manifest.json"
 DEPLOYMENT_TARGET=13.0
 

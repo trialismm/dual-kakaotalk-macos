@@ -3,7 +3,7 @@
 Creates a separate local `/Applications/KakaoTalkWork.app` from the official `/Applications/KakaoTalk.app`, with muted-green Dock (`#628C73`) and menu-bar (`#5B8A72`) icons.
 
 > [!WARNING]
-> This beta uses undocumented private macOS CoreUI APIs to rewrite a narrowly allowlisted set of menu-bar renditions. Apple may change these APIs without notice. The Intel build is verified on macOS 13; Apple Silicon remains experimental and unverified until reported otherwise.
+> This trusted-circle beta is intended only for the repository owner and acquaintances who trust the downloaded folder. It uses ad-hoc signing, an administrator prompt, and undocumented private macOS CoreUI APIs; it is not a notarized public installer. Verify the ZIP digest shown on the GitHub Release before running it. Apple may change CoreUI without notice. Intel macOS 13 is verified; Apple Silicon remains experimental and unverified.
 
 ## Install or update
 
@@ -14,7 +14,7 @@ Creates a separate local `/Applications/KakaoTalkWork.app` from the official `/A
 
 The same command handles fresh installs and updates. It validates the official app, stages a complete copy, changes the fixed identity to `KakaoTalkWork` / `com.kakao.KakaoTalkWorkMac`, recolors icons locally, signs the copy ad hoc, verifies it, and rolls back an existing work app if installation fails. It then opens both apps. The installer does not copy, inspect, or modify account data, chat data, Keychain entries, or Dock preferences.
 
-If a new official KakaoTalk build is not allowlisted, the installer stops without changing the work app and opens a prefilled compatibility issue. Review logs before attaching them; the five newest installer logs are kept in `~/Library/Logs/DualKakaoTalk`.
+If a build is unsupported or installation fails, the installer asks before opening a GitHub issue and reveals the relevant log for review. Logs are never attached automatically: remove personal information before pasting. The five newest private (`0600`) logs are kept in `~/Library/Logs/DualKakaoTalk`.
 
 ## Build and test
 

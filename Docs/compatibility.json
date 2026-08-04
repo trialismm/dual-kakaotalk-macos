@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "macOS": "13.7.8",
+      "macOSBuild": "22H730",
+      "architecture": "x86_64",
+      "kakaoBundleIdentifier": "com.kakao.KakaoTalkMac",
+      "kakaoShortVersion": "26.6.1",
+      "kakaoBuildVersion": "1190",
+      "kakaoTeamIdentifier": "L75WVXX68A",
+      "kakaoAssetsSHA256": "383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416",
+      "sourceSignatureVerified": true,
+      "dockTransform": "verified-locally",
+      "menuCatalogPublicWriter": "unavailable",
+      "releaseQualified": false
+    }
+  ]
+}

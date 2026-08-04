@@ -1,5 +1,5 @@
 #!/bin/bash
-set -u
+set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 HELPER="$ROOT/bin/dual-kakaotalk-tool"

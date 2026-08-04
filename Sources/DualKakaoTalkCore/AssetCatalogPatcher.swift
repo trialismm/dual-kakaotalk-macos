@@ -65,12 +65,16 @@ public enum AssetCatalogPatcher {
         "LoggedoutMenuIcon", "LoggedoutDarkMenuIcon", "AlternateMenuIcon", "AlternateDarkMenuIcon",
     ]
 
+    public static let supportedCatalogSHA256: Set<String> = [
+        "383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416"
+    ]
     public static func validate(plan: AssetCatalogMutationPlan) throws {
         guard plan.sourceCatalog.standardizedFileURL != plan.destinationCatalog.standardizedFileURL else {
             throw AssetCatalogPatcherError.destinationMustDiffer
         }
         let sourceDigest = try SHA256.file(at: plan.sourceCatalog)
-        guard plan.allowedSourceSHA256.contains(sourceDigest) else {
+        guard plan.allowedSourceSHA256.contains(sourceDigest),
+              supportedCatalogSHA256.contains(sourceDigest) else {
             throw AssetCatalogPatcherError.sourceNotAllowlisted
         }
     }
@@ -113,6 +117,7 @@ public enum AssetCatalogPatcher {
         let before = try renditions(in: plan.destinationCatalog)
         let targets = before.filter { allowedNames.contains($0.name) }
         try validateTargetRenditions(targets)
+        var expectedPixels: [String: Data] = [:]
         for rendition in targets {
             guard rendition.rgbaData.count == rendition.width * rendition.height * 4 else {
                 throw AssetCatalogPatcherError.invalidRenditionMetadata
@@ -121,19 +126,21 @@ public enum AssetCatalogPatcher {
             pixels.withUnsafeMutableBytes { rawBuffer in
                 let bytes = rawBuffer.bindMemory(to: UInt8.self)
                 for offset in stride(from: 0, to: bytes.count, by: 4) {
-                    let input = RGBA(
-                        red: bytes[offset],
-                        green: bytes[offset + 1],
-                        blue: bytes[offset + 2],
-                        alpha: bytes[offset + 3]
+                    let alpha = bytes[offset + 3]
+                    let straight = RGBA(
+                        red: unpremultiply(bytes[offset], alpha: alpha),
+                        green: unpremultiply(bytes[offset + 1], alpha: alpha),
+                        blue: unpremultiply(bytes[offset + 2], alpha: alpha),
+                        alpha: alpha
                     )
-                    let output = ColorTransformer.transform(input, variant: .menuBar)
-                    bytes[offset] = output.red
-                    bytes[offset + 1] = output.green
-                    bytes[offset + 2] = output.blue
+                    let output = ColorTransformer.transform(straight, variant: .menuBar)
+                    bytes[offset] = premultiply(output.red, alpha: output.alpha)
+                    bytes[offset + 1] = premultiply(output.green, alpha: output.alpha)
+                    bytes[offset + 2] = premultiply(output.blue, alpha: output.alpha)
                     bytes[offset + 3] = output.alpha
                 }
             }
+            expectedPixels["\(rendition.name)/\(rendition.scale)"] = pixels
             var error: NSError?
             guard CoreUIBridgeReplaceNamedImageRendition(plan.destinationCatalog, rendition.name, rendition.scale, rendition.width, rendition.height, pixels, &error) else {
                 throw AssetCatalogPatcherError.bridge(error?.localizedDescription ?? "CoreUI replacement failed.")
@@ -142,6 +149,12 @@ public enum AssetCatalogPatcher {
         let after = try renditions(in: plan.destinationCatalog)
         let patched = after.filter { allowedNames.contains($0.name) }
         try validateTargetRenditions(patched, requireInternalLinks: false)
+        for rendition in patched {
+            guard let expected = expectedPixels["\(rendition.name)/\(rendition.scale)"],
+                  validatesTransformedPixels(rendition.rgbaData, expected: expected) else {
+                throw AssetCatalogPatcherError.postWriteValidationFailed
+            }
+        }
         guard nonTargetMetadata(before) == nonTargetMetadata(after) else {
             throw AssetCatalogPatcherError.nonTargetMetadataChanged
         }
@@ -176,6 +189,36 @@ public enum AssetCatalogPatcher {
         }
     }
 
+    private static func unpremultiply(_ component: UInt8, alpha: UInt8) -> UInt8 {
+        guard alpha != 0 else { return 0 }
+        return UInt8(clamping: Int((Double(component) * 255.0 / Double(alpha)).rounded()))
+    }
+
+    private static func premultiply(_ component: UInt8, alpha: UInt8) -> UInt8 {
+        UInt8(clamping: Int((Double(component) * Double(alpha) / 255.0).rounded()))
+    }
+    private static func validatesTransformedPixels(_ actual: Data, expected: Data) -> Bool {
+        guard actual.count == expected.count, actual.count.isMultiple(of: 4) else { return false }
+        var greenPixelCount = 0
+        return actual.withUnsafeBytes { actualRaw in
+            let a = actualRaw.bindMemory(to: UInt8.self)
+            for offset in stride(from: 0, to: a.count, by: 4) {
+                let alpha = a[offset + 3]
+                if alpha == 0 { continue }
+                let red = unpremultiply(a[offset], alpha: alpha)
+                let green = unpremultiply(a[offset + 1], alpha: alpha)
+                let blue = unpremultiply(a[offset + 2], alpha: alpha)
+                let tolerance = max(2, Int(255 / max(1, Int(alpha))))
+                let isGreen = abs(Int(red) - Int(ColorTransformer.menuBarGreen.red)) <= tolerance &&
+                    abs(Int(green) - Int(ColorTransformer.menuBarGreen.green)) <= tolerance &&
+                    abs(Int(blue) - Int(ColorTransformer.menuBarGreen.blue)) <= tolerance
+                let isNotificationRed = red >= 153 && green < 115 && blue < 115
+                if !isGreen && !isNotificationRed { return false }
+                if isGreen { greenPixelCount += 1 }
+            }
+            return greenPixelCount > 0
+        }
+    }
     private static func nonTargetMetadata(_ renditions: [AssetCatalogRendition]) -> [String] {
         renditions
             .filter { !allowedNames.contains($0.name) }

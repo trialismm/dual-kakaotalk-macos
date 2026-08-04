@@ -125,25 +125,25 @@ public enum KakaoTalkWorkInstaller {
                 try fileManager.moveItem(at: destination, to: backup)
                 movedExisting = true
             }
-            do {
-                try fileManager.moveItem(at: staged, to: destination)
-                if movedExisting {
-                    try fileManager.removeItem(at: backup)
-                    movedExisting = false
-                }
-            } catch {
-                if movedExisting {
-                    try? fileManager.moveItem(at: backup, to: destination)
-                    movedExisting = false
-                }
-                throw error
-            }
-        } catch {
-            if movedExisting, !fileManager.fileExists(atPath: destination.path) {
-                try? fileManager.moveItem(at: backup, to: destination)
+            try fileManager.moveItem(at: staged, to: destination)
+            if movedExisting {
+                try fileManager.removeItem(at: backup)
                 movedExisting = false
             }
-            throw error
+        } catch {
+            let primaryError = error
+            if movedExisting, !fileManager.fileExists(atPath: destination.path) {
+                do {
+                    try fileManager.moveItem(at: backup, to: destination)
+                    movedExisting = false
+                } catch {
+                    throw InstallerError.commandFailed(
+                        "Installation failed (\(primaryError.localizedDescription)); rollback also failed. " +
+                        "The previous app is preserved at \(backup.path): \(error.localizedDescription)"
+                    )
+                }
+            }
+            throw primaryError
         }
     }
 

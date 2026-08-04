@@ -12,6 +12,7 @@ public struct OfficialAppFacts: Codable, Equatable, Sendable {
 public enum OfficialAppInspector {
     public static let supportedPath = "/Applications/KakaoTalk.app"
     public static let expectedBundleIdentifier = "com.kakao.KakaoTalkMac"
+    public static let expectedTeamIdentifier = "L75WVXX68A"
 
     public static func inspect(path: String = supportedPath) throws -> OfficialAppFacts {
         let appURL = URL(fileURLWithPath: path, isDirectory: true)
@@ -20,6 +21,10 @@ public enum OfficialAppInspector {
             throw InspectionError.appNotFound(path)
         }
 
+        let appValues = try appURL.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+        guard appValues.isDirectory == true, appValues.isSymbolicLink != true else {
+            throw InspectionError.untrustedSource("Official app path must be a real directory, not a symbolic link")
+        }
         let plistData = try Data(contentsOf: plistURL)
         guard let plist = try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil) as? [String: Any],
               let bundleIdentifier = plist["CFBundleIdentifier"] as? String,
@@ -42,6 +47,7 @@ public enum OfficialAppInspector {
         guard FileManager.default.fileExists(atPath: assetsURL.path) else {
             throw InspectionError.missingAssetsCatalog(assetsURL.path)
         }
+        try verifySignature(appURL)
 
         return OfficialAppFacts(
             path: appURL.path,
@@ -52,6 +58,30 @@ public enum OfficialAppInspector {
             assetsSHA256: try SHA256.file(at: assetsURL)
         )
     }
+
+    private static func verifySignature(_ appURL: URL) throws {
+        let verify = Process()
+        verify.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+        verify.arguments = ["--verify", "--deep", "--strict", appURL.path]
+        try verify.run()
+        verify.waitUntilExit()
+        guard verify.terminationStatus == 0 else {
+            throw InspectionError.untrustedSource("The official app signature is invalid")
+        }
+
+        let details = Process()
+        let pipe = Pipe()
+        details.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+        details.arguments = ["-dv", "--verbose=4", appURL.path]
+        details.standardError = pipe
+        try details.run()
+        details.waitUntilExit()
+        let output = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        guard details.terminationStatus == 0,
+              output.contains("TeamIdentifier=\(expectedTeamIdentifier)") else {
+            throw InspectionError.untrustedSource("The app is not signed by the expected Kakao Team ID")
+        }
+    }
 }
 
 public enum InspectionError: LocalizedError {
@@ -60,6 +90,7 @@ public enum InspectionError: LocalizedError {
     case unexpectedBundleIdentifier(String)
     case missingExecutable(String)
     case missingAssetsCatalog(String)
+    case untrustedSource(String)
 
     public var errorDescription: String? {
         switch self {
@@ -68,6 +99,7 @@ public enum InspectionError: LocalizedError {
         case .unexpectedBundleIdentifier(let value): "Unexpected bundle identifier: \(value)"
         case .missingExecutable(let path): "KakaoTalk executable is missing: \(path)"
         case .missingAssetsCatalog(let path): "KakaoTalk Assets.car is missing: \(path)"
+        case .untrustedSource(let reason): "Untrusted KakaoTalk source: \(reason)"
         }
     }
 }

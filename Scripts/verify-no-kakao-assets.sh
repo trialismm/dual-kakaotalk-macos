@@ -7,7 +7,7 @@ cd "$root"
 forbidden=0
 while IFS= read -r -d '' path; do
   case "$path" in
-    ./.git/*|./.build/*|./Artifacts/.gitkeep) continue ;;
+    ./.git/*|./.build/*|./.build-release/*|./dist/*|./Artifacts/.gitkeep) continue ;;
   esac
   printf 'forbidden release/repository asset: %s\n' "$path" >&2
   forbidden=1

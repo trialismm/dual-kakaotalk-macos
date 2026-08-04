@@ -20,6 +20,10 @@ NSErrorDomain const CoreUIBridgeErrorDomain = @"CoreUIBridgeErrorDomain";
 - (id)rendition;
 @end
 
+@interface CUIThemeRendition : NSObject
+- (instancetype)initWithCSIData:(NSData *)data forKey:(const void *)key;
+@end
+
 static BOOL CUIBridgeFail(CoreUIBridgeError code, NSString *description, NSError **error) {
     if (error != NULL) {
         *error = [NSError errorWithDomain:CoreUIBridgeErrorDomain code:code userInfo:@{NSLocalizedDescriptionKey: description}];
@@ -231,7 +235,7 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked rendition target is unavailable", error);
         }
 
-        SEL renditionKeySelector = NSSelectorFromString(@"key");
+        SEL renditionKeySelector = NSSelectorFromString(@"keyList");
         const void *targetKeyList = [target respondsToSelector:renditionKeySelector]
             ? ((const void *(*)(id, SEL))objc_msgSend)(target, renditionKeySelector)
             : existingKeyList;
@@ -242,6 +246,18 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
         NSData *carKey = ((id (*)(id, SEL, const void *))objc_msgSend)(structuredStore, keyDataSelector, targetKeyList);
         if (carKey == nil) {
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"CoreUI could not encode the rendition key", error);
+        }
+        if (internalLink) {
+            NSData *csiData = ((id (*)(id, SEL, id))objc_msgSend)(assetStore, NSSelectorFromString(@"assetForKey:"), carKey);
+            Class renditionClass = CUIBridgeClass(@"CUIThemeRendition", error);
+            if (csiData == nil || renditionClass == Nil) {
+                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas data is unavailable", error);
+            }
+            CUIThemeRendition *reconstructed = [[renditionClass alloc] initWithCSIData:csiData forKey:targetKeyList];
+            if (reconstructed == nil) {
+                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas rendition is invalid", error);
+            }
+            target = reconstructed;
         }
 
         CGSize canvasSize = [target respondsToSelector:NSSelectorFromString(@"unslicedSize")]
@@ -274,10 +290,11 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
 
         if (internalLink && [target respondsToSelector:NSSelectorFromString(@"unslicedImage")]) {
             CGImageRef existingImage = ((CGImageRef (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"unslicedImage"));
-            if (existingImage != NULL) {
-                CGContextDrawImage(context, CGRectMake(0, 0, canvasSize.width, canvasSize.height), existingImage);
-                CGContextClearRect(context, CGRectInset(destination, -2, -2));
+            if (existingImage == NULL) {
+                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas image is unavailable", error);
             }
+            CGContextDrawImage(context, CGRectMake(0, 0, canvasSize.width, canvasSize.height), existingImage);
+            CGContextClearRect(context, CGRectInset(destination, -2, -2));
         }
 
         CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)rgbaBytes);

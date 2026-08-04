@@ -66,13 +66,21 @@ final class InstallerTests: XCTestCase {
         )
     }
 
+    func testPreparedPhaseRecoversCrashAfterBackupRename() throws {
+        XCTAssertEqual(
+            try recoveryOperations(phase: "prepared", destinationExists: false, backupExists: true, stagedExists: true),
+            [.restoreBackup, .removeStaged, .removeJournal]
+        )
+    }
+
     func testBackupPhaseAlwaysRestoresPredecessor() throws {
         XCTAssertEqual(
             try recoveryOperations(phase: "predecessor-backed-up", destinationExists: false, backupExists: true, stagedExists: true),
             [.restoreBackup, .removeStaged, .removeJournal]
         )
-        XCTAssertThrowsError(
-            try recoveryOperations(phase: "predecessor-backed-up", destinationExists: false, backupExists: false, stagedExists: true)
+        XCTAssertEqual(
+            try recoveryOperations(phase: "predecessor-backed-up", destinationExists: true, backupExists: false, stagedExists: false),
+            [.removeDestination, .removeJournal]
         )
     }
 

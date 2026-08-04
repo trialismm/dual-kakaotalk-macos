@@ -64,10 +64,12 @@ enum RecoveryOperation: Equatable {
 func recoveryOperations(phase: String, destinationExists: Bool, backupExists: Bool, stagedExists: Bool) throws -> [RecoveryOperation] {
     switch phase {
     case "prepared":
-        return (stagedExists ? [.removeStaged] : []) + [.removeJournal]
+        return (destinationExists && backupExists ? [.removeDestination] : []) +
+            (backupExists ? [.restoreBackup] : []) +
+            (stagedExists ? [.removeStaged] : []) + [.removeJournal]
     case "predecessor-backed-up":
-        guard backupExists else { throw InstallerError.commandFailed("Recovery backup is missing.") }
-        return (destinationExists ? [.removeDestination] : []) + [.restoreBackup] +
+        return (destinationExists ? [.removeDestination] : []) +
+            (backupExists ? [.restoreBackup] : []) +
             (stagedExists ? [.removeStaged] : []) + [.removeJournal]
     case "installed":
         return (destinationExists ? [.removeDestination] : []) +
@@ -132,8 +134,8 @@ public enum KakaoTalkWorkInstaller {
             try writeJournal(phase: "prepared", request: request, backup: backup)
             if FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.moveItem(at: destination, to: backup)
-                try writeJournal(phase: "predecessor-backed-up", request: request, backup: backup)
             }
+            try writeJournal(phase: "predecessor-backed-up", request: request, backup: backup)
             try FileManager.default.moveItem(at: URL(fileURLWithPath: request.stagedPath), to: destination)
             try writeJournal(phase: "installed", request: request, backup: backup)
             try ProcessInstallCommandRunner().run("/usr/bin/codesign", ["--verify", "--deep", "--strict", destination.path])

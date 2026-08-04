@@ -14,6 +14,7 @@ LOG="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S)-$$.log"
 set -o noclobber
 : > "$LOG"
 chmod 600 "$LOG"
+set +o noclobber
 exec > >(tee -a "$LOG") 2>&1
 
 LANG_CODE="${LANG:-en}"

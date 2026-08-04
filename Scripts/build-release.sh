@@ -1,19 +1,94 @@
 #!/bin/bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 BUILD="$ROOT/.build-release"
 DIST="$ROOT/dist/Dual-KakaoTalk-for-macOS"
+ARTIFACT="$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.2.zip"
+MANIFEST="$ARTIFACT.manifest.json"
+DEPLOYMENT_TARGET=13.0
+
+fail() {
+  printf 'release validation failed: %s\n' "$*" >&2
+  exit 1
+}
+
+require_universal_slice() {
+  local binary="$1"
+  local arch="$2"
+  lipo -archs "$binary" | tr ' ' '\n' | grep -Fx "$arch" >/dev/null || fail "$binary is missing $arch"
+}
+
+require_macos_13_or_later() {
+  local binary="$1"
+  local version
+  version="$(otool -l "$binary" | awk '
+    $1 == "cmd" && ($2 == "LC_BUILD_VERSION" || $2 == "LC_VERSION_MIN_MACOSX") { want_version = 1; next }
+    want_version && ($1 == "minos" || $1 == "version") { print $2; exit }
+  ')"
+  [[ -n "$version" ]] || fail "$binary has no macOS deployment load command"
+  [[ "$version" == 13.* ]] || fail "$binary targets macOS $version; the release must retain a macOS 13 deployment target"
+}
+
+require_private_coreui_load() {
+  local binary="$1"
+  otool -L "$binary" | grep -F 'CoreUI.framework/Versions/A/CoreUI' >/dev/null || fail "$binary is missing the expected CoreUI private framework load"
+  otool -l "$binary" | awk '
+    $1 == "cmd" { load = ($2 == "LC_LOAD_DYLIB") }
+    load && $1 == "name" && $2 ~ /CoreUI\.framework\/Versions\/A\/CoreUI/ { found = 1 }
+    END { exit(found ? 0 : 1) }
+  ' || fail "$binary is missing the expected LC_LOAD_DYLIB command for CoreUI"
+}
+
+audit_archive() {
+  local archive="$1"
+  local extracted entry entry_lower magic
+  extracted="$(mktemp -d "${TMPDIR:-/tmp}/dual-kakaotalk-audit.XXXXXX")"
+  trap 'rm -rf "$extracted"' RETURN
+
+  while IFS= read -r entry; do
+    entry_lower="$(printf '%s' "$entry" | tr '[:upper:]' '[:lower:]')"
+    case "$entry_lower" in
+      *.app|*.app/*|*.car|*.icns|*.png|*.jpg|*.jpeg|*.gif|*.zip)
+        fail "archive contains forbidden Kakao asset name: $entry"
+        ;;
+    esac
+  done < <(zipinfo -1 "$archive")
+
+  unzip -q "$archive" -d "$extracted"
+  while IFS= read -r -d '' entry; do
+    magic="$(file -b "$entry")"
+    case "$magic" in
+      *'PNG image data'*|*'JPEG image data'*|*'GIF image data'*|*'Apple icon image'*|*'Zip archive data'*|*'Apple asset catalog'*)
+        fail "archive contains forbidden Kakao asset magic: $entry ($magic)"
+        ;;
+    esac
+  done < <(find "$extracted" -type f -print0)
+
+  rm -rf "$extracted"
+  trap - RETURN
+}
+
 rm -rf "$BUILD" "$DIST"
 mkdir -p "$BUILD/x86_64" "$BUILD/arm64" "$DIST/bin" "$DIST/Compatibility"
 
+export MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
 swift build -c release --arch x86_64 --scratch-path "$BUILD/x86_64"
 swift build -c release --arch arm64 --scratch-path "$BUILD/arm64"
-lipo -create \
-  "$BUILD/x86_64/x86_64-apple-macosx/release/dual-kakaotalk-tool" \
-  "$BUILD/arm64/arm64-apple-macosx/release/dual-kakaotalk-tool" \
-  -output "$DIST/bin/dual-kakaotalk-tool"
+
+X86_BINARY="$BUILD/x86_64/x86_64-apple-macosx/release/dual-kakaotalk-tool"
+ARM_BINARY="$BUILD/arm64/arm64-apple-macosx/release/dual-kakaotalk-tool"
+for binary in "$X86_BINARY" "$ARM_BINARY"; do
+  [[ -f "$binary" ]] || fail "expected build output is absent: $binary"
+  require_macos_13_or_later "$binary"
+  require_private_coreui_load "$binary"
+done
+
+lipo -create "$X86_BINARY" "$ARM_BINARY" -output "$DIST/bin/dual-kakaotalk-tool"
 chmod +x "$DIST/bin/dual-kakaotalk-tool"
+require_universal_slice "$DIST/bin/dual-kakaotalk-tool" x86_64
+require_universal_slice "$DIST/bin/dual-kakaotalk-tool" arm64
+
 cp "$ROOT/Install.command" "$DIST/Install.command"
 chmod +x "$DIST/Install.command"
 cp "$ROOT/Compatibility/asset-sha256.txt" "$DIST/Compatibility/asset-sha256.txt"
@@ -21,8 +96,28 @@ cp "$ROOT/README.md" "$DIST/README.txt"
 cp "$ROOT/LICENSE" "$DIST/LICENSE.txt"
 
 codesign --force --sign - "$DIST/bin/dual-kakaotalk-tool"
-codesign --verify --strict "$DIST/bin/dual-kakaotalk-tool"
+codesign --verify --strict --verbose=2 "$DIST/bin/dual-kakaotalk-tool"
+"$ROOT/Scripts/verify-no-kakao-assets.sh"
+
 mkdir -p "$ROOT/dist"
-ditto -c -k --keepParent "$DIST" "$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.1.zip"
-lipo -archs "$DIST/bin/dual-kakaotalk-tool"
-shasum -a 256 "$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.1.zip"
+rm -f "$ARTIFACT" "$MANIFEST"
+ditto -c -k --keepParent "$DIST" "$ARTIFACT"
+audit_archive "$ARTIFACT"
+
+artifact_sha256="$(shasum -a 256 "$ARTIFACT" | awk '{print $1}')"
+source_revision="${GITHUB_SHA:-unknown}"
+build_timestamp="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+cat > "$MANIFEST" <<EOF
+{
+  "schemaVersion": 1,
+  "artifact": "$(basename "$ARTIFACT")",
+  "sha256": "$artifact_sha256",
+  "sourceRevision": "$source_revision",
+  "builtAt": "$build_timestamp",
+  "deploymentTarget": "$DEPLOYMENT_TARGET",
+  "architectures": ["x86_64", "arm64"],
+  "provenance": "CI-generated build metadata only; it is not immutable or protected provenance."
+}
+EOF
+
+printf 'Artifact SHA-256: %s\nManifest: %s\n' "$artifact_sha256" "$MANIFEST"

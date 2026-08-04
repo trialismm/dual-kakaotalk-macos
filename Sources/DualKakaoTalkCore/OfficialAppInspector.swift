@@ -13,6 +13,8 @@ public enum OfficialAppInspector {
     public static let supportedPath = "/Applications/KakaoTalk.app"
     public static let expectedBundleIdentifier = "com.kakao.KakaoTalkMac"
     public static let expectedTeamIdentifier = "L75WVXX68A"
+    public static let expectedShortVersion = "26.6.1"
+    public static let expectedBuildVersion = "1190"
 
     public static func inspect(path: String = supportedPath) throws -> OfficialAppFacts {
         let appURL = URL(fileURLWithPath: path, isDirectory: true)
@@ -36,6 +38,9 @@ public enum OfficialAppInspector {
         }
         guard bundleIdentifier == expectedBundleIdentifier else {
             throw InspectionError.unexpectedBundleIdentifier(bundleIdentifier)
+        }
+        guard shortVersion == expectedShortVersion, buildVersion == expectedBuildVersion else {
+            throw InspectionError.unsupportedVersion(shortVersion, buildVersion)
         }
 
         let executableURL = appURL.appendingPathComponent("Contents/MacOS/\(executableName)")
@@ -91,6 +96,7 @@ public enum InspectionError: LocalizedError {
     case missingExecutable(String)
     case missingAssetsCatalog(String)
     case untrustedSource(String)
+    case unsupportedVersion(String, String)
 
     public var errorDescription: String? {
         switch self {
@@ -100,6 +106,7 @@ public enum InspectionError: LocalizedError {
         case .missingExecutable(let path): "KakaoTalk executable is missing: \(path)"
         case .missingAssetsCatalog(let path): "KakaoTalk Assets.car is missing: \(path)"
         case .untrustedSource(let reason): "Untrusted KakaoTalk source: \(reason)"
+        case .unsupportedVersion(let version, let build): "Unsupported KakaoTalk version/build: \(version) (\(build))"
         }
     }
 }

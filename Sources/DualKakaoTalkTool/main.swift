@@ -15,7 +15,7 @@ private func fail(_ message: String, code: Exit) -> Never {
 
 private let arguments = Array(CommandLine.arguments.dropFirst())
 guard let command = arguments.first else {
-    fail("usage: dual-kakaotalk-tool <inspect|recolor|catalog-capability|catalog-list|catalog-patch|install|install-staged|set-dock-icon>", code: .usage)
+    fail("usage: dual-kakaotalk-tool <inspect|recolor|catalog-capability|catalog-list|catalog-patch|prepare-install|install|install-staged|set-dock-icon>", code: .usage)
 }
 
 do {
@@ -81,27 +81,26 @@ do {
             )
         )
 
-    case "install":
-        guard arguments.count == 3 else {
-            fail("usage: install <allowed-assets-sha256> <dock-icon.icns>", code: .usage)
+    case "prepare-install":
+        guard arguments.count == 4 else {
+            fail("usage: prepare-install <allowed-assets-sha256> <dock-icon.icns> <release-version>", code: .usage)
         }
-        try KakaoTalkWorkInstaller.install(.init(
+        let request = try KakaoTalkWorkInstaller.prepare(.init(
             sourceApp: URL(fileURLWithPath: OfficialAppInspector.supportedPath),
             destinationApp: URL(fileURLWithPath: KakaoTalkWorkInstaller.destinationPath),
             allowedAssetsSHA256: [arguments[1]],
             dockIcon: URL(fileURLWithPath: arguments[2])
-        ))
+        ), version: arguments[3])
+        print(request.path)
+
+    case "install":
+        guard arguments.count == 2 else {
+            fail("usage: install <fixed-request.plist>", code: .usage)
+        }
+        print(try KakaoTalkWorkInstaller.installReleaseRequest(at: URL(fileURLWithPath: arguments[1])) ? "NOOP: existing destination matches requested build and catalog digest." : "INSTALLED: destination verified.")
 
     case "install-staged":
-        guard arguments.count == 4 else {
-            fail("usage: install-staged <destination.app> <allowed-assets-sha256> <dock-icon.icns>", code: .usage)
-        }
-        try KakaoTalkWorkInstaller.install(.init(
-            sourceApp: URL(fileURLWithPath: OfficialAppInspector.supportedPath),
-            destinationApp: URL(fileURLWithPath: arguments[1]),
-            allowedAssetsSHA256: [arguments[2]],
-            dockIcon: URL(fileURLWithPath: arguments[3])
-        ))
+        fail("install-staged is not available in release builds; use prepare-install then install <request.plist>", code: .usage)
 
     case "write-dock-icon":
         guard arguments.count == 3 else {

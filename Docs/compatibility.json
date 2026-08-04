@@ -1,10 +1,17 @@
 {
   "schemaVersion": 1,
+  "qualification": {
+    "intel": "experimental-qualified",
+    "appleSilicon": "unverified",
+    "minimumMacOS": "13",
+    "provenance": "CI manifests provide build metadata and SHA-256 values only; GitHub does not make this provenance immutable or protected."
+  },
   "entries": [
     {
       "macOS": "13.7.8",
       "macOSBuild": "22H730",
       "architecture": "x86_64",
+      "qualificationStatus": "experimental-qualified",
       "kakaoBundleIdentifier": "com.kakao.KakaoTalkMac",
       "kakaoShortVersion": "26.6.1",
       "kakaoBuildVersion": "1190",
@@ -14,6 +21,12 @@
       "dockTransform": "verified-locally",
       "menuCatalogPublicWriter": "unavailable",
       "releaseQualified": false
+    },
+    {
+      "architecture": "arm64",
+      "qualificationStatus": "unverified",
+      "releaseQualified": false,
+      "evidenceRequired": "Docs/APPLE-SILICON-VALIDATION.md"
     }
   ]
 }

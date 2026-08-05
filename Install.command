@@ -208,12 +208,6 @@ progress 7 7 "$STEP_7"
 diagnostic result success
 diagnostic installed_bundle_id "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$DESTINATION/Contents/Info.plist")"
 diagnostic installed_icon_file "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$DESTINATION/Contents/Info.plist")"
-PHASE="dock_icon_refresh"
-LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
-if [[ -x "$LSREGISTER" ]]; then
-  "$LSREGISTER" -f "$DESTINATION"
-fi
-/usr/bin/killall Dock 2>/dev/null || true
 PHASE="launch"
 printf '%s\n' "$DONE"
 open "$SOURCE"

@@ -191,7 +191,7 @@ ICON="${TMPDIR:-/tmp}/DualKakaoTalkWork-$$.icns"
 PHASE="staging_preparation"
 progress 5 7 "$STEP_5"
 # Preparation, catalog mutation and ad-hoc signing happen before administrator authorization.
-REQUEST="$("$HELPER" prepare-install "$hash" "$ICON" "1.0")"
+REQUEST="$("$HELPER" prepare-install "$hash" "$ICON" "18")"
 [[ "$REQUEST" == /private/tmp/DualKakaoTalk-*/* || "$REQUEST" == /tmp/DualKakaoTalk-*/* ]] || { printf 'Invalid staging receipt.\n'; exit 1; }
 PHASE="administrator_authorization"
 progress 6 7 "$STEP_6"

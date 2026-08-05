@@ -253,11 +253,22 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
             if (csiData == nil || renditionClass == Nil) {
                 return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas data is unavailable", error);
             }
-            CUIThemeRendition *reconstructed = [[renditionClass alloc] initWithCSIData:csiData forKey:targetKeyList];
-            if (reconstructed == nil) {
-                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas rendition is invalid", error);
+
+            // Tahoe removed initWithCSIData:forKey:. The linked target returned by
+            // CoreUI already carries the atlas image and metadata, so use it when
+            // the legacy reconstruction initializer is unavailable.
+            SEL initializer = NSSelectorFromString(@"initWithCSIData:forKey:");
+            if ([renditionClass instancesRespondToSelector:initializer]) {
+                id reconstructed = ((id (*)(id, SEL, NSData *, const void *))objc_msgSend)(
+                    [renditionClass alloc], initializer, csiData, targetKeyList
+                );
+                if (reconstructed == nil) {
+                    return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas rendition is invalid", error);
+                }
+                target = reconstructed;
+            } else if (![target respondsToSelector:NSSelectorFromString(@"unslicedImage")]) {
+                return CUIBridgeFail(CoreUIBridgeErrorSelectorUnavailable, @"CoreUI linked atlas access is unavailable", error);
             }
-            target = reconstructed;
         }
 
         CGSize canvasSize = [target respondsToSelector:NSSelectorFromString(@"unslicedSize")]

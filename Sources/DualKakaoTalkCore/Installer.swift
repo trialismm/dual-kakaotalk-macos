@@ -109,7 +109,7 @@ public enum KakaoTalkWorkInstaller {
         let staged = root.appendingPathComponent("KakaoTalkWork.app")
         do {
             try FileManager.default.copyItem(at: source, to: staged)
-            try mutateAndSign(staged, facts: facts, request: request, releaseVersion: version)
+            try mutateAndSign(staged, facts: facts, request: request)
             let stagedDigest = try SHA256.file(at: staged.appendingPathComponent("Contents/Resources/Assets.car"))
             let payload = PrivilegedInstallRequest(version: version, nonce: UUID().uuidString, sourcePath: source.path, destinationPath: destinationPath, stagedPath: staged.path, sourceCatalogSHA256: facts.assetsSHA256, destinationCatalogSHA256: stagedDigest)
             let requestURL = root.appendingPathComponent("request.plist")
@@ -152,11 +152,11 @@ public enum KakaoTalkWorkInstaller {
         throw InstallerError.commandFailed("Use prepare followed by install-release-request; direct installation is disabled.")
     }
 
-    private static func mutateAndSign(_ staged: URL, facts: OfficialAppFacts, request: InstallRequest, releaseVersion: String) throws {
+    private static func mutateAndSign(_ staged: URL, facts: OfficialAppFacts, request: InstallRequest) throws {
         let fm = FileManager.default, contents = staged.appendingPathComponent("Contents"), plist = staged.appendingPathComponent("Contents/Info.plist")
         let old = contents.appendingPathComponent("MacOS/\(facts.executableName)"), new = contents.appendingPathComponent("MacOS/\(executableName)")
         guard fm.fileExists(atPath: old.path) else { throw InstallerError.missingResource(old.path) }
-        if old != new { try fm.moveItem(at: old, to: new) }; try updatePlist(at: plist, releaseVersion: releaseVersion)
+        if old != new { try fm.moveItem(at: old, to: new) }; try updatePlist(at: plist)
         if let icon = request.dockIcon {
             guard fm.fileExists(atPath: icon.path) else { throw InstallerError.missingResource(icon.path) }
             let installedIcon = contents.appendingPathComponent("Resources/AppIcon.icns")
@@ -214,19 +214,11 @@ public enum KakaoTalkWorkInstaller {
               dictionary["CFBundleIdentifier"] as? String == bundleIdentifier,
               dictionary["CFBundleExecutable"] as? String == executableName,
               dictionary["CFBundleIconFile"] as? String == "AppIcon",
-              dictionary["CFBundleVersion"] as? String == stagedBundleVersion(request),
               (try? SHA256.file(at: destination.appendingPathComponent("Contents/Resources/Assets.car"))) == request.destinationCatalogSHA256
         else { return false }
         let destinationIcon = destination.appendingPathComponent("Contents/Resources/AppIcon.icns")
         let stagedIcon = URL(fileURLWithPath: request.stagedPath).appendingPathComponent("Contents/Resources/AppIcon.icns")
         return (try? SHA256.file(at: destinationIcon)) == (try? SHA256.file(at: stagedIcon))
-    }
-    private static func stagedBundleVersion(_ request: PrivilegedInstallRequest) -> String? {
-        let plistURL = URL(fileURLWithPath: request.stagedPath).appendingPathComponent("Contents/Info.plist")
-        guard let data = try? Data(contentsOf: plistURL),
-              let dictionary = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
-        else { return nil }
-        return dictionary["CFBundleVersion"] as? String
     }
     private static func withExclusiveLock(_ body: () throws -> Void) throws {
         let fd = lockURL.path.withCString { Darwin.open($0, O_CREAT | O_RDWR | O_NOFOLLOW, mode_t(0o600)) }; guard fd >= 0 else { throw InstallerError.commandFailed("Cannot open installer lock.") }; defer { close(fd) }
@@ -275,19 +267,6 @@ public enum KakaoTalkWorkInstaller {
         try data.withUnsafeBytes { bytes in guard write(fd, bytes.baseAddress, bytes.count) == bytes.count else { throw InstallerError.commandFailed("Cannot write durable journal.") } }; guard fsync(fd) == 0 else { throw InstallerError.commandFailed("Cannot sync journal.") }; guard rename(temporary.path, url.path) == 0 else { throw InstallerError.commandFailed("Cannot atomically replace journal.") }
         let directory = open(url.deletingLastPathComponent().path, O_RDONLY); if directory >= 0 { _ = fsync(directory); close(directory) }
     }
-    private static func updatePlist(at url: URL, releaseVersion: String) throws {
-        let data = try Data(contentsOf: url)
-        guard var plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
-              let sourceBundleVersion = plist["CFBundleVersion"] as? String else {
-            throw InspectionError.invalidInfoPlist
-        }
-        plist["CFBundleExecutable"] = executableName
-        plist["CFBundleIdentifier"] = bundleIdentifier
-        plist["CFBundleName"] = executableName
-        plist["CFBundleDisplayName"] = executableName
-        plist["CFBundleVersion"] = "\(sourceBundleVersion).\(releaseVersion)"
-        plist.removeValue(forKey: "CFBundleIconName")
-        try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0).write(to: url, options: .atomic)
-    }
+    private static func updatePlist(at url: URL) throws { let data = try Data(contentsOf: url); guard var plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else { throw InspectionError.invalidInfoPlist }; plist["CFBundleExecutable"] = executableName; plist["CFBundleIdentifier"] = bundleIdentifier; plist["CFBundleName"] = executableName; plist["CFBundleDisplayName"] = executableName; plist.removeValue(forKey: "CFBundleIconName"); try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0).write(to: url, options: .atomic) }
     private static func setIconFile(_ name: String, inPlistAt url: URL) throws { let data = try Data(contentsOf: url); guard var plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else { throw InspectionError.invalidInfoPlist }; plist["CFBundleIconFile"] = name; try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0).write(to: url, options: .atomic) }
 }

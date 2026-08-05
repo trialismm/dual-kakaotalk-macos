@@ -27,6 +27,14 @@ Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applica
 
 After updating official KakaoTalk, quit both applications and run `Install.command` from the latest release again. The same command handles fresh installs and updates. The existing work app is backed up before replacement and restored if installation fails.
 
+## Uninstall
+
+1. Quit the work KakaoTalk application.
+2. Right-click `Uninstall.command` in the release folder, then select **Open → Open**.
+3. Approve the macOS administrator prompt.
+
+The uninstaller removes only `/Applications/KakaoTalkWork.app`. It preserves official `/Applications/KakaoTalk.app`, account/chat data, Keychain, and installer logs under `~/Library/Logs/DualKakaoTalk/`. It succeeds harmlessly when the work app is already absent, and refuses deletion if the fixed path is a symbolic link or has an unexpected bundle identifier.
+
 ## What the installer does
 
 - Validates the official app's fixed path, bundle ID, version, build, Kakao Team ID, signature, and `Assets.car` SHA-256.

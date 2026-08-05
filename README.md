@@ -27,6 +27,14 @@
 
 공식 KakaoTalk을 업데이트한 뒤에는 두 앱을 종료하고 최신 릴리스의 `Install.command`를 다시 실행하세요. 동일한 명령이 신규 설치와 업데이트를 모두 처리합니다. 기존 업무용 앱은 교체 전에 백업되며 설치가 실패하면 복구됩니다.
 
+## 제거
+
+1. 업무용 카카오톡을 종료합니다.
+2. 릴리스 폴더의 `Uninstall.command`를 **우클릭 → 열기 → 열기**로 실행합니다.
+3. macOS 관리자 인증 창에서 승인합니다.
+
+제거 프로그램은 `/Applications/KakaoTalkWork.app`만 삭제합니다. 원본 `/Applications/KakaoTalk.app`, 계정·대화 데이터, 키체인 및 `~/Library/Logs/DualKakaoTalk/`의 설치 로그는 삭제하지 않습니다. 앱이 이미 없으면 성공으로 종료하며, 고정 경로가 심볼릭 링크이거나 예상 번들 ID와 다르면 안전을 위해 삭제하지 않습니다.
+
 ## 설치 프로그램이 수행하는 작업
 
 - 공식 앱의 고정 경로, 번들 ID, 버전, 빌드, Kakao Team ID, 서명 및 `Assets.car` SHA-256 검증

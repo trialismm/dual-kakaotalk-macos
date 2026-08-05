@@ -91,6 +91,8 @@ require_universal_slice "$DIST/bin/dual-kakaotalk-tool" arm64
 
 cp "$ROOT/Install.command" "$DIST/Install.command"
 chmod +x "$DIST/Install.command"
+cp "$ROOT/Uninstall.command" "$DIST/Uninstall.command"
+chmod +x "$DIST/Uninstall.command"
 cp "$ROOT/Compatibility/asset-sha256.txt" "$DIST/Compatibility/asset-sha256.txt"
 cp "$ROOT/README.md" "$DIST/README.ko.txt"
 cp "$ROOT/README.en.md" "$DIST/README.en.txt"

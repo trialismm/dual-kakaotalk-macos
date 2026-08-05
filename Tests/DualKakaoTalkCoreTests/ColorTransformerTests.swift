@@ -2,16 +2,6 @@ import XCTest
 @testable import DualKakaoTalkCore
 
 final class ColorTransformerTests: XCTestCase {
-    func testDockYellowBecomesMutedGreen() {
-        let input = RGBA(red: 255, green: 224, blue: 0, alpha: 207)
-        let output = ColorTransformer.transform(input, variant: .dock)
-        XCTAssertEqual(output, RGBA(red: 0x62, green: 0x8C, blue: 0x73, alpha: 207))
-    }
-
-    func testDockBrownIsPreserved() {
-        let input = RGBA(red: 65, green: 34, blue: 34, alpha: 255)
-        XCTAssertEqual(ColorTransformer.transform(input, variant: .dock), input)
-    }
 
     func testTransparentPixelsArePreserved() {
         let input = RGBA(red: 255, green: 255, blue: 0, alpha: 0)

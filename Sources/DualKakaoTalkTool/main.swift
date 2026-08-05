@@ -15,7 +15,7 @@ private func fail(_ message: String, code: Exit) -> Never {
 
 private let arguments = Array(CommandLine.arguments.dropFirst())
 guard let command = arguments.first else {
-    fail("usage: dual-kakaotalk-tool <inspect|recolor|catalog-capability|catalog-list|catalog-patch|prepare-install|install|install-staged|write-dock-icon|progress-window>", code: .usage)
+    fail("usage: dual-kakaotalk-tool <inspect|recolor|catalog-capability|catalog-list|catalog-patch|prepare-install|install|install-staged|progress-window>", code: .usage)
 }
 
 do {
@@ -31,7 +31,7 @@ do {
         guard arguments.count == 4,
               let variant = IconVariant(rawValue: arguments[1])
         else {
-            fail("usage: recolor <dock|menu-bar> <input.png> <output.png>", code: .usage)
+            fail("usage: recolor <menu-bar> <input.png> <output.png>", code: .usage)
         }
         try ColorTransformer.recolorPNG(
             input: URL(fileURLWithPath: arguments[2]),
@@ -82,15 +82,14 @@ do {
         )
 
     case "prepare-install":
-        guard arguments.count == 4 else {
-            fail("usage: prepare-install <allowed-assets-sha256> <dock-icon.icns> <release-version>", code: .usage)
+        guard arguments.count == 3 else {
+            fail("usage: prepare-install <allowed-assets-sha256> <release-version>", code: .usage)
         }
         let request = try KakaoTalkWorkInstaller.prepare(.init(
             sourceApp: URL(fileURLWithPath: OfficialAppInspector.supportedPath),
             destinationApp: URL(fileURLWithPath: KakaoTalkWorkInstaller.destinationPath),
-            allowedAssetsSHA256: [arguments[1]],
-            dockIcon: URL(fileURLWithPath: arguments[2])
-        ), version: arguments[3])
+            allowedAssetsSHA256: [arguments[1]]
+        ), version: arguments[2])
         print(request.path)
 
     case "install":
@@ -102,11 +101,6 @@ do {
     case "install-staged":
         fail("install-staged is not available in release builds; use prepare-install then install <request.plist>", code: .usage)
 
-    case "write-dock-icon":
-        guard arguments.count == 3 else {
-            fail("usage: write-dock-icon <source.app> <output.icns>", code: .usage)
-        }
-        try writeDockIcon(sourceApp: arguments[1], output: arguments[2])
 
     case "progress-window":
         guard arguments.count == 3 else {
@@ -121,47 +115,6 @@ do {
     fail(error.localizedDescription, code: .failure)
 }
 
-private func writeDockIcon(sourceApp: String, output: String) throws {
-    let sourceIcon = NSWorkspace.shared.icon(forFile: sourceApp)
-    let iconset = FileManager.default.temporaryDirectory
-        .appendingPathComponent("DualKakaoTalk-\(UUID().uuidString).iconset")
-    try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
-    defer { try? FileManager.default.removeItem(at: iconset) }
-
-    for size in [16, 32, 128, 256, 512] {
-        for scale in [1, 2] {
-            let pixels = size * scale
-            guard let bitmap = NSBitmapImageRep(
-                bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels,
-                bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
-                isPlanar: false, colorSpaceName: .deviceRGB,
-                bytesPerRow: 0, bitsPerPixel: 0
-            ) else {
-                throw InstallerError.commandFailed("Unable to allocate Dock icon bitmap.")
-            }
-            bitmap.size = NSSize(width: size, height: size)
-            NSGraphicsContext.saveGraphicsState()
-            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
-            sourceIcon.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
-            NSGraphicsContext.restoreGraphicsState()
-            guard let recolored = bitmap.recoloring(variant: .dock),
-                  let png = recolored.representation(using: .png, properties: [:]) else {
-                throw InstallerError.commandFailed("Unable to encode Dock icon.")
-            }
-            let suffix = scale == 2 ? "@2x" : ""
-            try png.write(to: iconset.appendingPathComponent("icon_\(size)x\(size)\(suffix).png"))
-        }
-    }
-
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
-    process.arguments = ["-c", "icns", iconset.path, "-o", output]
-    try process.run()
-    process.waitUntilExit()
-    guard process.terminationStatus == 0 else {
-        throw InstallerError.commandFailed("iconutil could not create the Dock icon.")
-    }
-}
 
 private final class ProgressWindowController: NSObject, NSApplicationDelegate {
     private let stateFile: String
@@ -241,29 +194,4 @@ private func runProgressWindow(stateFile: String, title: String) -> Never {
     app.delegate = controller
     app.run()
     Foundation.exit(EXIT_SUCCESS)
-}
-
-private extension NSBitmapImageRep {
-    func recoloring(variant: IconVariant) -> NSBitmapImageRep? {
-        guard let copy = copy() as? NSBitmapImageRep else { return nil }
-        for y in 0..<copy.pixelsHigh {
-            for x in 0..<copy.pixelsWide {
-                guard let color = copy.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
-                let input = RGBA(
-                    red: UInt8(clamping: Int((color.redComponent * 255).rounded())),
-                    green: UInt8(clamping: Int((color.greenComponent * 255).rounded())),
-                    blue: UInt8(clamping: Int((color.blueComponent * 255).rounded())),
-                    alpha: UInt8(clamping: Int((color.alphaComponent * 255).rounded()))
-                )
-                let output = ColorTransformer.transform(input, variant: variant)
-                copy.setColor(NSColor(
-                    calibratedRed: CGFloat(output.red) / 255,
-                    green: CGFloat(output.green) / 255,
-                    blue: CGFloat(output.blue) / 255,
-                    alpha: CGFloat(output.alpha) / 255
-                ), atX: x, y: y)
-            }
-        }
-        return copy
-    }
 }

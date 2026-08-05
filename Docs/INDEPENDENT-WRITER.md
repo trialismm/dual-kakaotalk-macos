@@ -37,7 +37,7 @@
 - Property: 잘못된 길이, 순환 link, 중복 key, 겹치는 atlas rectangle 및 잘린 block
 - Golden: 합성된 단일 rendition 및 공유 atlas catalog의 byte diff 검증
 - Integration: Xcode가 있는 환경의 `assetutil` 검사와 macOS 13+ CoreUI readback
-- End-to-end: staged KakaoTalkWork 실행, 메뉴 상태 화면 확인, 읽지 않음 배지 보존, Dock 구분 및 업데이트 rollback
+- End-to-end: staged KakaoTalkWork 실행, 메뉴 상태 화면 확인, 읽지 않음 배지 보존, `듀얼 카카오톡` Dock 표시 이름 및 업데이트 rollback
 
 ## 결정
 

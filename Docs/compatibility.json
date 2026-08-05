@@ -18,7 +18,7 @@
       "kakaoTeamIdentifier": "L75WVXX68A",
       "kakaoAssetsSHA256": "383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416",
       "sourceSignatureVerified": true,
-      "dockTransform": "verified-locally",
+      "dockIdentification": "localized-name",
       "menuCatalogPublicWriter": "unavailable",
       "releaseQualified": false
     },
@@ -38,7 +38,7 @@
       "installVerified": true,
       "uninstallVerified": true,
       "simultaneousLaunchVerified": true,
-      "dockTransform": "verified-remotely",
+      "dockIdentification": "localized-name",
       "menuTransform": "verified-remotely",
       "releaseQualified": false
     }

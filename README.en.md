@@ -2,7 +2,7 @@
 
 [한국어](README.md) | [English](README.en.md)
 
-Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applications/KakaoTalk.app`, allowing personal and Dual KakaoTalk accounts to run side by side. To distinguish Dual KakaoTalk, it locally changes the Dock icon to muted green (`#628C73`) and the menu-bar icons to green (`#5B8A72`).
+Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applications/KakaoTalk.app`, allowing personal and Dual KakaoTalk accounts to run side by side. The dual app appears as `Dual KakaoTalk` in the Dock and app switcher, while its menu-bar icons are changed locally to green (`#5B8A72`).
 
 > [!WARNING]
 > This limited beta is intended only for the repository owner and acquaintances who trust the downloaded folder. It uses ad-hoc signing, an administrator prompt, and undocumented private macOS CoreUI APIs. It is not a notarized general-public installer. Verify the ZIP SHA-256 shown on the GitHub Release before running it. Apple or KakaoTalk updates may break it. Intel macOS 13 and Apple M3 macOS 26.5.2 have been physically verified.
@@ -88,4 +88,4 @@ The release contains a Universal x86_64 and arm64 helper. `Assets.car` mutation 
 
 This project is not affiliated with, endorsed by, or sponsored by Kakao Corp. KakaoTalk names, trademarks, icons, and application assets belong to their respective owners. The MIT license applies only to independently written project source code.
 
-The repository and releases do not contain or redistribute Kakao executables, app bundles, icons, `Assets.car`, screenshots, or derived Kakao image pixels. Every icon transformation is performed locally from the official app installed on the user's Mac.
+The repository and releases do not contain or redistribute Kakao executables, app bundles, icons, `Assets.car`, screenshots, or derived Kakao image pixels. Menu-bar icon transformations are performed locally from the official app installed on the user's Mac.

@@ -11,7 +11,6 @@ HASHES="$ROOT/Compatibility/asset-sha256.txt"
 INSTALLER_VERSION="0.1.0-beta.18"
 PHASE="bootstrap"
 FAILURE_RECORDED=0
-ICON=""
 LOG_DIR="$HOME/Library/Logs/DualKakaoTalk"
 mkdir -p -m 700 "$LOG_DIR"
 LOG="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S)-$$.log"
@@ -39,7 +38,7 @@ if [[ "$LANG_CODE" == ko* ]]; then
   STEP_1="설치 프로그램을 확인하고 있습니다."
   STEP_2="공식 KakaoTalk 호환성을 확인하고 있습니다."
   STEP_3="실행 중인 KakaoTalk을 종료하고 있습니다."
-  STEP_4="초록색 아이콘을 생성하고 있습니다."
+  STEP_4="듀얼 카카오톡 이름과 초록색 메뉴 막대 아이콘을 준비하고 있습니다."
   STEP_5="듀얼 카카오톡을 복사·변경·서명하고 있습니다. 잠시 기다려 주세요."
   STEP_6="관리자 승인 후 듀얼 카카오톡을 설치하고 있습니다."
   STEP_7="설치 결과를 확인하고 앱을 실행하고 있습니다."
@@ -57,7 +56,7 @@ else
   STEP_1="Checking the installer."
   STEP_2="Checking official KakaoTalk compatibility."
   STEP_3="Closing running KakaoTalk applications."
-  STEP_4="Generating the green icons."
+  STEP_4="Preparing the Dual KakaoTalk name and green menu-bar icons."
   STEP_5="Copying, modifying, and signing Dual KakaoTalk. This may take a moment."
   STEP_6="Installing Dual KakaoTalk after administrator approval."
   STEP_7="Verifying the installation and opening both apps."
@@ -100,7 +99,6 @@ diagnostic locale "${LANG:-unknown}"
 
 on_exit() {
   local status=$?
-  if [[ -n "$ICON" ]]; then rm -f "$ICON"; fi
   if (( status != 0 && FAILURE_RECORDED == 0 )); then
     diagnostic result failed
     diagnostic failure_phase "$PHASE"
@@ -184,14 +182,12 @@ if /usr/bin/pgrep -x KakaoTalk >/dev/null || /usr/bin/pgrep -x KakaoTalkWork >/d
   exit 1
 fi
 
-PHASE="icon_generation"
+PHASE="dual_identity_preparation"
 progress 4 7 "$STEP_4"
-ICON="${TMPDIR:-/tmp}/DualKakaoTalkWork-$$.icns"
-"$HELPER" write-dock-icon "$SOURCE" "$ICON"
 PHASE="staging_preparation"
 progress 5 7 "$STEP_5"
 # Preparation, catalog mutation and ad-hoc signing happen before administrator authorization.
-REQUEST="$("$HELPER" prepare-install "$hash" "$ICON" "1.0")"
+REQUEST="$("$HELPER" prepare-install "$hash" "1.0")"
 [[ "$REQUEST" == /private/tmp/DualKakaoTalk-*/* || "$REQUEST" == /tmp/DualKakaoTalk-*/* ]] || { printf 'Invalid staging receipt.\n'; exit 1; }
 PHASE="administrator_authorization"
 progress 6 7 "$STEP_6"

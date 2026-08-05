@@ -5,10 +5,10 @@ public struct InstallRequest: Sendable {
     public let sourceApp: URL
     public let destinationApp: URL
     public let allowedAssetsSHA256: Set<String>
-    public let dockIcon: URL?
-    public init(sourceApp: URL, destinationApp: URL, allowedAssetsSHA256: Set<String>, dockIcon: URL? = nil) {
-        self.sourceApp = sourceApp; self.destinationApp = destinationApp
-        self.allowedAssetsSHA256 = allowedAssetsSHA256; self.dockIcon = dockIcon
+    public init(sourceApp: URL, destinationApp: URL, allowedAssetsSHA256: Set<String>) {
+        self.sourceApp = sourceApp
+        self.destinationApp = destinationApp
+        self.allowedAssetsSHA256 = allowedAssetsSHA256
     }
 }
 
@@ -54,6 +54,40 @@ public struct PrivilegedInstallRequest: Codable, Sendable {
         self.schema = Self.schemaVersion; self.version = version; self.nonce = nonce; self.sourcePath = sourcePath
         self.destinationPath = destinationPath; self.stagedPath = stagedPath
         self.sourceCatalogSHA256 = sourceCatalogSHA256; self.destinationCatalogSHA256 = destinationCatalogSHA256
+    }
+}
+
+let localizedDualAppNames = [
+    "ko": "듀얼 카카오톡",
+    "en": "Dual KakaoTalk",
+    "ja": "Dual KakaoTalk"
+]
+
+func applyLocalizedDualAppNames(to app: URL) throws {
+    for (language, name) in localizedDualAppNames {
+        let url = app.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw InstallerError.missingResource(url.path)
+        }
+        let data = try Data(contentsOf: url)
+        guard var plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
+            throw InspectionError.invalidInfoPlist
+        }
+        plist["CFBundleName"] = name
+        plist["CFBundleDisplayName"] = name
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
+            .write(to: url, options: .atomic)
+    }
+}
+
+func hasLocalizedDualAppNames(in app: URL) -> Bool {
+    localizedDualAppNames.allSatisfy { language, name in
+        let url = app.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")
+        guard let data = try? Data(contentsOf: url),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
+        else { return false }
+        return plist["CFBundleName"] as? String == name &&
+            plist["CFBundleDisplayName"] as? String == name
     }
 }
 
@@ -156,8 +190,9 @@ public enum KakaoTalkWorkInstaller {
         let fm = FileManager.default, contents = staged.appendingPathComponent("Contents"), plist = staged.appendingPathComponent("Contents/Info.plist")
         let old = contents.appendingPathComponent("MacOS/\(facts.executableName)"), new = contents.appendingPathComponent("MacOS/\(executableName)")
         guard fm.fileExists(atPath: old.path) else { throw InstallerError.missingResource(old.path) }
-        if old != new { try fm.moveItem(at: old, to: new) }; try updatePlist(at: plist)
-        if let icon = request.dockIcon { guard fm.fileExists(atPath: icon.path) else { throw InstallerError.missingResource(icon.path) }; try fm.copyItem(at: icon, to: contents.appendingPathComponent("Resources/KakaoTalkWork.icns")); try setIconFile("KakaoTalkWork.icns", inPlistAt: plist) }
+        if old != new { try fm.moveItem(at: old, to: new) }
+        try updatePlist(at: plist)
+        try applyLocalizedDualAppNames(to: staged)
         let assets = contents.appendingPathComponent("Resources/Assets.car"), patched = contents.appendingPathComponent("Resources/.Assets.green.car")
         guard fm.fileExists(atPath: assets.path) else { throw InstallerError.missingResource(assets.path) }
         try AssetCatalogPatcher.patch(.init(sourceCatalog: assets, destinationCatalog: patched, allowedSourceSHA256: request.allowedAssetsSHA256)); _ = try fm.replaceItemAt(assets, withItemAt: patched)
@@ -196,10 +231,10 @@ public enum KakaoTalkWorkInstaller {
     }
     private static func validateStaged(_ request: PrivilegedInstallRequest) throws {
         let staged = URL(fileURLWithPath: request.stagedPath); try rejectLinkAndInsecure(staged)
-        guard FileManager.default.fileExists(atPath: staged.appendingPathComponent("Contents/Info.plist").path), try SHA256.file(at: staged.appendingPathComponent("Contents/Resources/Assets.car")) == request.destinationCatalogSHA256 else { throw InstallerError.invalidRequest("Staged app changed after preparation.") }
+        guard FileManager.default.fileExists(atPath: staged.appendingPathComponent("Contents/Info.plist").path), try SHA256.file(at: staged.appendingPathComponent("Contents/Resources/Assets.car")) == request.destinationCatalogSHA256, hasLocalizedDualAppNames(in: staged) else { throw InstallerError.invalidRequest("Staged app changed after preparation.") }
     }
     private static func destinationIsNoOp(_ destination: URL, request: PrivilegedInstallRequest) -> Bool {
-        guard FileManager.default.fileExists(atPath: destination.path), let plist = try? Data(contentsOf: destination.appendingPathComponent("Contents/Info.plist")), let dictionary = try? PropertyListSerialization.propertyList(from: plist, options: [], format: nil) as? [String: Any], dictionary["CFBundleIdentifier"] as? String == bundleIdentifier, dictionary["CFBundleExecutable"] as? String == executableName else { return false }
+        guard FileManager.default.fileExists(atPath: destination.path), let plist = try? Data(contentsOf: destination.appendingPathComponent("Contents/Info.plist")), let dictionary = try? PropertyListSerialization.propertyList(from: plist, options: [], format: nil) as? [String: Any], dictionary["CFBundleIdentifier"] as? String == bundleIdentifier, dictionary["CFBundleExecutable"] as? String == executableName, hasLocalizedDualAppNames(in: destination) else { return false }
         return (try? SHA256.file(at: destination.appendingPathComponent("Contents/Resources/Assets.car"))) == request.destinationCatalogSHA256
     }
     private static func withExclusiveLock(_ body: () throws -> Void) throws {
@@ -250,5 +285,4 @@ public enum KakaoTalkWorkInstaller {
         let directory = open(url.deletingLastPathComponent().path, O_RDONLY); if directory >= 0 { _ = fsync(directory); close(directory) }
     }
     private static func updatePlist(at url: URL) throws { let data = try Data(contentsOf: url); guard var plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else { throw InspectionError.invalidInfoPlist }; plist["CFBundleExecutable"] = executableName; plist["CFBundleIdentifier"] = bundleIdentifier; plist["CFBundleName"] = executableName; plist["CFBundleDisplayName"] = executableName; plist.removeValue(forKey: "CFBundleIconName"); try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0).write(to: url, options: .atomic) }
-    private static func setIconFile(_ name: String, inPlistAt url: URL) throws { let data = try Data(contentsOf: url); guard var plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else { throw InspectionError.invalidInfoPlist }; plist["CFBundleIconFile"] = name; try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0).write(to: url, options: .atomic) }
 }

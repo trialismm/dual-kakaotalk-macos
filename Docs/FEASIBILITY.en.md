@@ -7,7 +7,7 @@ Status: **EXPERIMENTAL BETA — PRIVATE API, FINGERPRINT-GATED**
 
 The Intel verification machine runs macOS 13.7.8 (22H730). Its official KakaoTalk 26.6.1 (1190) has bundle identifier `com.kakao.KakaoTalkMac`, Team ID `L75WVXX68A`, a valid strict deep signature, and a Universal x86_64/arm64 executable. Exact non-asset compatibility facts are recorded in `compatibility.json`.
 
-The helper derives the green Dock icon locally with public AppKit APIs. The menu-bar states reside in `Contents/Resources/Assets.car`; macOS provides no public writer API for that compiled format.
+Dock icon pixel replacement is unsupported because of code-signing constraints and macOS runtime icon selection. The dual app is instead labeled `Dual KakaoTalk` in the Dock and app switcher. Its green menu-bar states reside in `Contents/Resources/Assets.car`; macOS provides no public writer API for that compiled format.
 
 ## Current implementation
 

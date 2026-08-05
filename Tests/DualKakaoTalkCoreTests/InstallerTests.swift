@@ -114,6 +114,42 @@ final class InstallerTests: XCTestCase {
             try recoveryOperations(phase: "future", destinationExists: true, backupExists: true, stagedExists: true)
         )
     }
+    func testLocalizedDualAppNamesPreserveOtherInfoPlistStrings() throws {
+        let app = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".app")
+        defer { try? FileManager.default.removeItem(at: app) }
+
+        for language in localizedDualAppNames.keys {
+            let directory = app.appendingPathComponent("Contents/Resources/\(language).lproj")
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let original: [String: String] = [
+                "CFBundleName": "KakaoTalk",
+                "CFBundleDisplayName": "KakaoTalk",
+                "NSCameraUsageDescription": "preserve-me"
+            ]
+            let data = try PropertyListSerialization.data(fromPropertyList: original, format: .binary, options: 0)
+            try data.write(to: directory.appendingPathComponent("InfoPlist.strings"))
+        }
+
+        try applyLocalizedDualAppNames(to: app)
+
+        XCTAssertTrue(hasLocalizedDualAppNames(in: app))
+        for language in localizedDualAppNames.keys {
+            let url = app.appendingPathComponent("Contents/Resources/\(language).lproj/InfoPlist.strings")
+            let data = try Data(contentsOf: url)
+            let plist = try XCTUnwrap(
+                PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
+            )
+            XCTAssertEqual(plist["NSCameraUsageDescription"] as? String, "preserve-me")
+        }
+    }
+
+    func testLocalizedDualAppNamesFailClosedWhenLocalizationIsMissing() throws {
+        let app = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".app")
+        defer { try? FileManager.default.removeItem(at: app) }
+
+        XCTAssertThrowsError(try applyLocalizedDualAppNames(to: app))
+        XCTAssertFalse(hasLocalizedDualAppNames(in: app))
+    }
     private func makeRequest() -> PrivilegedInstallRequest {
         PrivilegedInstallRequest(
             version: "1.2.3",

@@ -1,7 +1,6 @@
 import AppKit
 
 public enum IconVariant: String, Sendable {
-    case dock
     case menuBar = "menu-bar"
 }
 
@@ -20,32 +19,19 @@ public struct RGBA: Equatable, Sendable {
 }
 
 public enum ColorTransformer {
-    public static let dockGreen = RGBA(red: 0x62, green: 0x8C, blue: 0x73, alpha: 0xFF)
     public static let menuBarGreen = RGBA(red: 0x5B, green: 0x8A, blue: 0x72, alpha: 0xFF)
 
     public static func transform(_ pixel: RGBA, variant: IconVariant) -> RGBA {
         guard pixel.alpha > 0 else { return pixel }
 
-        switch variant {
-        case .dock:
-            let isKakaoYellow = pixel.red >= 166 && pixel.green >= 115 && pixel.blue <= 90
-            guard isKakaoYellow else { return pixel }
-            return RGBA(
-                red: dockGreen.red,
-                green: dockGreen.green,
-                blue: dockGreen.blue,
-                alpha: pixel.alpha
-            )
-        case .menuBar:
-            let isNotificationRed = pixel.red >= 153 && pixel.green < 115 && pixel.blue < 115
-            guard !isNotificationRed else { return pixel }
-            return RGBA(
-                red: menuBarGreen.red,
-                green: menuBarGreen.green,
-                blue: menuBarGreen.blue,
-                alpha: pixel.alpha
-            )
-        }
+        let isNotificationRed = pixel.red >= 153 && pixel.green < 115 && pixel.blue < 115
+        guard !isNotificationRed else { return pixel }
+        return RGBA(
+            red: menuBarGreen.red,
+            green: menuBarGreen.green,
+            blue: menuBarGreen.blue,
+            alpha: pixel.alpha
+        )
     }
 
     public static func recolorPNG(input: URL, output: URL, variant: IconVariant) throws {

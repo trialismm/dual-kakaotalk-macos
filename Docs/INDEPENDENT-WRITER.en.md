@@ -36,7 +36,7 @@ A compiled asset catalog is a BOM (`BOMStore`) container with rendition keys, CS
 - Property: malformed lengths, cyclic links, duplicate keys, overlapping atlas rectangles, truncated blocks.
 - Golden: synthetic one-rendition and shared-atlas catalogs with byte-diff assertions.
 - Integration: `assetutil` inspection where Xcode exists and CoreUI readback on macOS 13+.
-- End-to-end: staged KakaoTalkWork launch, visual menu states, unread badge preservation, Dock distinction, update rollback.
+- End-to-end: staged KakaoTalkWork launch, visual menu states, unread badge preservation, the `Dual KakaoTalk` Dock label, and update rollback.
 
 ## Decision
 

@@ -3,7 +3,7 @@
 
 ## Status
 
-**VERIFIED ON M3/macOS 26.5.2.** On a MacBook Air `Mac15,13` running native arm64, beta.16 passed installation, removal, simultaneous personal-app operation, and green Dock/menu-bar icon checks. Other Apple Silicon chip and macOS combinations remain experimental and use the procedure below for further qualification.
+**VERIFIED ON M3/macOS 26.5.2.** On a MacBook Air `Mac15,13` running native arm64, beta.16 passed installation, removal, simultaneous personal-app operation, and green menu-bar icon checks. Other Apple Silicon chip and macOS combinations remain experimental and use the procedure below for further qualification.
 
 This procedure tests the public beta on a personally owned Apple Silicon Mac running macOS 13 or later. It does not require Xcode, developer tools, a Kakao account belonging to anyone else, or any modification of account data, Keychain data, or Dock preferences.
 
@@ -50,8 +50,8 @@ Run every scenario using the shipped `Install.command`; no Xcode build, source c
 
 With both apps running, capture screenshots showing:
 
-- separate Dock entries and Dual KakaoTalk's muted-green Dock icon;
-- the personal and Dual KakaoTalk app names, with the dual instance identified as KakaoTalkWork;
+- separate Dock entries, with the dual instance labeled `Dual KakaoTalk`;
+- the personal app labeled `KakaoTalk`;
 - menu-bar normal, selected, and unread/badged states where those states can be produced naturally;
 - no missing, blank, or incorrectly colored menu-bar icons.
 

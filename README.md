@@ -2,7 +2,7 @@
 
 [한국어](README.md) | [English](README.en.md)
 
-공식 `/Applications/KakaoTalk.app`을 기반으로 별도의 `/Applications/KakaoTalkWork.app`을 만들어 개인용·듀얼 카카오톡을 동시에 사용할 수 있게 합니다. 듀얼 카카오톡은 원본과 구분할 수 있도록 Dock 아이콘을 차분한 초록색(`#628C73`), 메뉴 막대 아이콘을 초록색(`#5B8A72`)으로 로컬에서 변경합니다.
+공식 `/Applications/KakaoTalk.app`을 기반으로 별도의 `/Applications/KakaoTalkWork.app`을 만들어 개인용·듀얼 카카오톡을 동시에 사용할 수 있게 합니다. 듀얼 앱은 Dock과 앱 전환기에서 `듀얼 카카오톡`으로 표시되며, 메뉴 막대 아이콘은 초록색(`#5B8A72`)으로 로컬에서 변경됩니다.
 
 > [!WARNING]
 > 본 프로젝트는 저장소 소유자와 다운로드 폴더를 신뢰하는 지인을 위한 제한적 베타입니다. ad-hoc 서명, 관리자 권한 승인 및 비공개 macOS CoreUI API를 사용하며, 공증된 일반 공개 설치 프로그램이 아닙니다. 실행하기 전에 GitHub Release에 표시된 ZIP SHA-256을 확인하세요. Apple 또는 KakaoTalk 업데이트로 동작이 중단될 수 있습니다. Intel macOS 13과 Apple M3 macOS 26.5.2에서 검증했습니다.
@@ -88,4 +88,4 @@ swift test
 
 본 프로젝트는 Kakao Corp.와 제휴하거나 Kakao의 승인·후원을 받은 프로젝트가 아닙니다. KakaoTalk 관련 명칭, 상표, 아이콘 및 애플리케이션 자산의 권리는 각 권리자에게 있습니다. MIT 라이선스는 본 프로젝트가 독자적으로 작성한 소스 코드에만 적용됩니다.
 
-저장소와 릴리스에는 Kakao 실행 파일, 앱 번들, 아이콘, `Assets.car`, 스크린샷 또는 파생된 Kakao 이미지 픽셀을 포함하거나 재배포하지 않습니다. 모든 아이콘 변경은 사용자의 Mac에 설치된 공식 앱에서 로컬로 생성됩니다.
+저장소와 릴리스에는 Kakao 실행 파일, 앱 번들, 아이콘, `Assets.car`, 스크린샷 또는 파생된 Kakao 이미지 픽셀을 포함하거나 재배포하지 않습니다. 메뉴 막대 아이콘 변경은 사용자의 Mac에 설치된 공식 앱에서 로컬로 생성됩니다.

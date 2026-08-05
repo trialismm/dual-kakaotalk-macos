@@ -1,38 +1,51 @@
-name: 설치·호환성 오류 보고 / Installation report
-description: 구조화된 설치 로그를 이용해 설치 실패 또는 지원하지 않는 KakaoTalk 빌드를 보고합니다.
-title: "[Installation] "
+name: 제거 오류 보고 / Uninstallation report
+description: 구조화된 제거 로그를 이용해 듀얼 카카오톡 제거 실패를 보고합니다.
+title: "[Uninstall] "
 labels: [compatibility]
 body:
   - type: markdown
     attributes:
       value: |
-        `~/Library/Logs/DualKakaoTalk/`에서 가장 최근 `install-*.log`를 확인한 뒤 아래에 붙여 넣어 주세요.
-        로그에는 분석에 필요한 installer/macOS/CPU/KakaoTalk 버전·빌드·fingerprint·실패 단계가 `diagnostic.*` 형식으로 기록됩니다.
+        `~/Library/Logs/DualKakaoTalk/`에서 가장 최근 `uninstall-*.log`를 확인한 뒤 아래에 붙여 넣어 주세요.
+        로그에는 분석에 필요한 uninstaller/macOS/CPU/제거 단계와 결과가 `diagnostic.*` 형식으로 기록됩니다.
         로그는 자동 업로드되지 않습니다. 사용자 이름, 개인 경로, 이메일 등 개인정보가 없는지 제출 전에 확인하세요. 대화 내용이나 계정 정보는 필요하지 않습니다.
 
-        Paste the newest `install-*.log` from `~/Library/Logs/DualKakaoTalk/`. Review it for personal information first. Chat and account data are not required.
+        Paste the newest `uninstall-*.log` from `~/Library/Logs/DualKakaoTalk/`. Review it for personal information first. Chat and account data are not required.
 
   - type: textarea
     id: symptom
     attributes:
       label: 발생한 문제 / What happened?
       description: 기대한 결과와 실제 결과, 실패한 단계 또는 화면을 설명해 주세요.
-      placeholder: Install.command 실행 후 관리자 인증 단계에서 종료됩니다.
+      placeholder: Uninstall.command 실행 후 관리자 인증 단계에서 제거되지 않습니다.
     validations:
       required: true
 
   - type: textarea
     id: diagnostic_log
     attributes:
-      label: 구조화된 설치 로그 / Structured installation log
-      description: 가장 최근 install 로그 전체를 붙여 넣으세요. diagnostic.* 행을 삭제하지 마세요.
+      label: 구조화된 제거 로그 / Structured uninstallation log
+      description: 가장 최근 uninstall 로그 전체를 붙여 넣으세요. diagnostic.* 행을 삭제하지 마세요.
       render: shell
       placeholder: |
         diagnostic.schema_version=1
-        diagnostic.installer_version=0.1.0-beta.11
+        diagnostic.uninstaller_version=0.1.0-beta.11
         diagnostic.macos_version=13.7.8
         diagnostic.architecture=x86_64
         diagnostic.failure_phase=administrator_authorization
+        diagnostic.exit_code=1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installed_state
+    attributes:
+      label: 제거 후 앱 상태 / App state after removal attempt
+      options:
+        - KakaoTalkWork.app이 그대로 있음 / Still present
+        - 일부만 남아 있음 / Partially remains
+        - 앱은 삭제됐지만 오류가 표시됨 / Removed but an error was shown
+        - 확인하지 못함 / Not checked
     validations:
       required: true
 

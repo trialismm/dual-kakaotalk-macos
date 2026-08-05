@@ -62,7 +62,7 @@ The five newest logs of each type are retained under:
 ~/Library/Logs/DualKakaoTalk/
 ```
 
-The directory uses mode `0700`, and log files use mode `0600`. `install-*.log` records the installer version, helper details, KakaoTalk details, and installation result. `uninstall-*.log` records the uninstaller version, target bundle ID, removal result, and whether user data was preserved. Both contain `diagnostic.*` fields for UTC timestamp, macOS version/build, CPU architecture, result, failure phase, exit code, and failure line, with user-home and temporary paths automatically replaced. On installation or removal failure, the command reveals the log and asks before opening a GitHub issue. Logs are never uploaded automatically. Review the log, then paste it into the issue form's **Structured operation log** field.
+The directory uses mode `0700`, and log files use mode `0600`. `install-*.log` records the installer version, helper details, KakaoTalk details, and installation result. `uninstall-*.log` records the uninstaller version, target bundle ID, removal result, and whether user data was preserved. Both contain `diagnostic.*` fields for UTC timestamp, macOS version/build, CPU architecture, result, failure phase, exit code, and failure line, with user-home and temporary paths automatically replaced. On failure, each command reveals its log and asks before opening its dedicated GitHub issue form. Logs are never uploaded automatically. Review the log, then use **Structured installation log** for installation failures or **Structured uninstallation log** for removal failures.
 
 ## Build and test from source
 

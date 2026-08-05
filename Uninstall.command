@@ -6,7 +6,7 @@ HELPER="$ROOT/bin/dual-kakaotalk-tool"
 PROGRESS_APP="$ROOT/bin/DualKakaoProgress.app"
 PROGRESS_FILE="${TMPDIR:-/tmp}/DualKakaoTalk-uninstall-progress-$$.state"
 PROGRESS_STARTED=0
-UNINSTALLER_VERSION="0.1.0-beta.10"
+UNINSTALLER_VERSION="0.1.0-beta.11"
 PHASE="bootstrap"
 ERROR_LINE="unknown"
 LOG_DIR="$HOME/Library/Logs/DualKakaoTalk"
@@ -92,7 +92,7 @@ APPLESCRIPT
 )"
     if [[ "$choice" == "$REPORT_BUTTON" ]]; then
       /usr/bin/open -R "$LOG" || true
-      /usr/bin/open 'https://github.com/hubeen/dual-kakaotalk-macos/issues/new?template=compatibility.yml' || true
+      /usr/bin/open 'https://github.com/hubeen/dual-kakaotalk-macos/issues/new?template=uninstall.yml' || true
     fi
   fi
   /usr/bin/find "$LOG_DIR" -type f -name 'uninstall-*.log' -print0 | /usr/bin/xargs -0 ls -1t 2>/dev/null | /usr/bin/awk 'NR>5' | while IFS= read -r old; do rm -f "$old"; done || true

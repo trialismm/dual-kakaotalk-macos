@@ -5,7 +5,7 @@
 공식 `/Applications/KakaoTalk.app`을 기반으로 별도의 `/Applications/KakaoTalkWork.app`을 만들어 개인용·듀얼 카카오톡을 동시에 사용할 수 있게 합니다. 듀얼 카카오톡은 원본과 구분할 수 있도록 Dock 아이콘을 차분한 초록색(`#628C73`), 메뉴 막대 아이콘을 초록색(`#5B8A72`)으로 로컬에서 변경합니다.
 
 > [!WARNING]
-> 본 프로젝트는 저장소 소유자와 다운로드 폴더를 신뢰하는 지인을 위한 제한적 베타입니다. ad-hoc 서명, 관리자 권한 승인 및 비공개 macOS CoreUI API를 사용하며, 공증된 일반 공개 설치 프로그램이 아닙니다. 실행하기 전에 GitHub Release에 표시된 ZIP SHA-256을 확인하세요. Apple 또는 KakaoTalk 업데이트로 동작이 중단될 수 있습니다. Intel macOS 13은 검증했지만 Apple Silicon은 아직 **UNVERIFIED** 상태입니다.
+> 본 프로젝트는 저장소 소유자와 다운로드 폴더를 신뢰하는 지인을 위한 제한적 베타입니다. ad-hoc 서명, 관리자 권한 승인 및 비공개 macOS CoreUI API를 사용하며, 공증된 일반 공개 설치 프로그램이 아닙니다. 실행하기 전에 GitHub Release에 표시된 ZIP SHA-256을 확인하세요. Apple 또는 KakaoTalk 업데이트로 동작이 중단될 수 있습니다. Intel macOS 13과 Apple M3 macOS 26.5.2에서 검증했습니다.
 
 ## 요구 사항
 
@@ -81,7 +81,7 @@ swift test
 - 공식 앱 업데이트는 듀얼 카카오톡에 자동 반영되지 않으므로 `Install.command`를 다시 실행해야 합니다.
 - ad-hoc 서명 때문에 macOS 보안 경고가 나타날 수 있습니다.
 - Apple 또는 KakaoTalk 내부 형식이 바뀌면 설치가 차단될 수 있습니다.
-- Apple Silicon 빌드는 포함되지만 실제 기기 검증 전까지 **UNVERIFIED**입니다.
+- Apple Silicon은 M3/macOS 26.5.2에서 검증했으며 다른 칩·macOS 조합은 실험적입니다.
 - 본 릴리스는 신뢰하는 사용자 범위 밖에 일반 배포하기 위한 공증 설치 프로그램이 아닙니다.
 
 ## 비제휴 및 권리 고지

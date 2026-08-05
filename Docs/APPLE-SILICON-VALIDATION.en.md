@@ -3,7 +3,7 @@
 
 ## Status
 
-**UNVERIFIED.** The release is Universal, but Apple Silicon behavior is not qualified until a friend supplies the evidence below. Do not describe Apple Silicon as supported, verified, or release-qualified before that evidence is reviewed.
+**VERIFIED ON M3/macOS 26.5.2.** On a MacBook Air `Mac15,13` running native arm64, beta.16 passed installation, removal, simultaneous personal-app operation, and green Dock/menu-bar icon checks. Other Apple Silicon chip and macOS combinations remain experimental and use the procedure below for further qualification.
 
 This procedure tests the public beta on a personally owned Apple Silicon Mac running macOS 13 or later. It does not require Xcode, developer tools, a Kakao account belonging to anyone else, or any modification of account data, Keychain data, or Dock preferences.
 

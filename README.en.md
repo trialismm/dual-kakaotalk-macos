@@ -5,7 +5,7 @@
 Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applications/KakaoTalk.app`, allowing personal and Dual KakaoTalk accounts to run side by side. To distinguish Dual KakaoTalk, it locally changes the Dock icon to muted green (`#628C73`) and the menu-bar icons to green (`#5B8A72`).
 
 > [!WARNING]
-> This limited beta is intended only for the repository owner and acquaintances who trust the downloaded folder. It uses ad-hoc signing, an administrator prompt, and undocumented private macOS CoreUI APIs. It is not a notarized general-public installer. Verify the ZIP SHA-256 shown on the GitHub Release before running it. Apple or KakaoTalk updates may break it. Intel macOS 13 is verified; Apple Silicon remains **UNVERIFIED**.
+> This limited beta is intended only for the repository owner and acquaintances who trust the downloaded folder. It uses ad-hoc signing, an administrator prompt, and undocumented private macOS CoreUI APIs. It is not a notarized general-public installer. Verify the ZIP SHA-256 shown on the GitHub Release before running it. Apple or KakaoTalk updates may break it. Intel macOS 13 and Apple M3 macOS 26.5.2 have been physically verified.
 
 ## Requirements
 
@@ -81,7 +81,7 @@ The release contains a Universal x86_64 and arm64 helper. `Assets.car` mutation 
 - Official app updates are not copied automatically; run `Install.command` again.
 - Ad-hoc signing may trigger macOS security warnings.
 - Installation fails closed if Apple or KakaoTalk changes an internal format.
-- The Universal build includes arm64, but Apple Silicon remains **UNVERIFIED** until physical-device validation.
+- Apple Silicon is verified on M3/macOS 26.5.2; other chip and macOS combinations remain experimental.
 - This trusted-circle beta is not a notarized installer for general redistribution.
 
 ## Non-affiliation and rights

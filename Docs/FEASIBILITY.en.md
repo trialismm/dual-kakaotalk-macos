@@ -25,7 +25,7 @@ The bridge declarations are independently implemented from observed runtime sele
 
 ## Residual risk
 
-CoreUI is private and may change in any macOS update. Catalog internals may change in any KakaoTalk update. Ad-hoc signing can trigger security prompts. Apple Silicon output is built Universal but remains unverified pending physical-device testing. Every unknown catalog fails closed and is reported through the compatibility issue flow.
+CoreUI is private and may change in any macOS update. Catalog internals may change in any KakaoTalk update. Ad-hoc signing can trigger security prompts. The Universal output is physically verified on Intel macOS 13.7.8 and Apple M3 macOS 26.5.2; other combinations remain experimental. Every unknown catalog fails closed and is reported through the compatibility issue flow.
 
 ## Follow-up
 

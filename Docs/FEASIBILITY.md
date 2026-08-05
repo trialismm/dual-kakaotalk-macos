@@ -26,7 +26,7 @@ bridge 선언은 관찰한 runtime selector와 MIT 라이선스 CoreUI header �
 
 ## 잔여 위험
 
-CoreUI는 비공개이므로 macOS 업데이트에서 변경될 수 있습니다. Catalog 내부 구조도 카카오톡 업데이트에서 바뀔 수 있습니다. Ad-hoc 서명은 보안 경고를 유발할 수 있습니다. Apple Silicon용 결과물은 Universal로 빌드되지만 실제 기기 테스트 전까지 미검증 상태입니다. 알 수 없는 catalog는 모두 안전하게 실패하며 호환성 이슈 절차로 보고됩니다.
+CoreUI는 비공개이므로 macOS 업데이트에서 변경될 수 있습니다. Catalog 내부 구조도 카카오톡 업데이트에서 바뀔 수 있습니다. Ad-hoc 서명은 보안 경고를 유발할 수 있습니다. Universal 결과물은 Intel macOS 13.7.8과 Apple M3 macOS 26.5.2에서 실제 검증했으며 다른 조합은 실험적입니다. 알 수 없는 catalog는 모두 안전하게 실패하며 호환성 이슈 절차로 보고됩니다.
 
 ## 후속 작업
 

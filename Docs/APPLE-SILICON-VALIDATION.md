@@ -4,7 +4,7 @@
 
 ## 상태
 
-**미검증(UNVERIFIED).** 릴리스는 Universal이지만, 아래 증거를 지인에게 받아 검토하기 전까지 Apple Silicon 동작은 검증된 것이 아닙니다. 검토 전에는 Apple Silicon을 지원됨, 검증됨 또는 릴리스 적격이라고 설명하지 않습니다.
+**M3/macOS 26.5.2 검증 완료.** MacBook Air `Mac15,13`의 native arm64 환경에서 beta.16 설치·제거, 개인용 앱과 동시 실행, 초록색 Dock 및 메뉴 막대 아이콘을 확인했습니다. 다른 Apple Silicon 칩과 macOS 조합은 여전히 실험적이며 아래 절차로 추가 검증합니다.
 
 이 절차는 macOS 13 이상을 실행하는 개인 소유 Apple Silicon Mac에서 공개 베타를 테스트합니다. Xcode, 개발자 도구, 다른 사람의 카카오 계정, 계정 데이터·키체인 데이터·Dock 환경설정 변경이 필요하지 않습니다.
 

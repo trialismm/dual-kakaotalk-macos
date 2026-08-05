@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "qualification": {
     "intel": "experimental-qualified",
-    "appleSilicon": "unverified",
+    "appleSilicon": "m3-experimental-qualified",
     "minimumMacOS": "13",
     "provenance": "CI manifests provide build metadata and SHA-256 values only; GitHub does not make this provenance immutable or protected."
   },
@@ -23,10 +23,24 @@
       "releaseQualified": false
     },
     {
+      "macOS": "26.5.2",
+      "macOSBuild": "25F84",
       "architecture": "arm64",
-      "qualificationStatus": "unverified",
-      "releaseQualified": false,
-      "evidenceRequired": "Docs/APPLE-SILICON-VALIDATION.md"
+      "hardware": "MacBook Air Mac15,13",
+      "chip": "Apple M3",
+      "translated": false,
+      "qualificationStatus": "experimental-qualified",
+      "kakaoBundleIdentifier": "com.kakao.KakaoTalkMac",
+      "kakaoShortVersion": "26.6.1",
+      "kakaoBuildVersion": "1190",
+      "kakaoAssetsSHA256": "383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416",
+      "installerVersion": "0.1.0-beta.16",
+      "installVerified": true,
+      "uninstallVerified": true,
+      "simultaneousLaunchVerified": true,
+      "dockTransform": "verified-remotely",
+      "menuTransform": "verified-remotely",
+      "releaseQualified": false
     }
   ]
 }

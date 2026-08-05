@@ -157,13 +157,7 @@ public enum KakaoTalkWorkInstaller {
         let old = contents.appendingPathComponent("MacOS/\(facts.executableName)"), new = contents.appendingPathComponent("MacOS/\(executableName)")
         guard fm.fileExists(atPath: old.path) else { throw InstallerError.missingResource(old.path) }
         if old != new { try fm.moveItem(at: old, to: new) }; try updatePlist(at: plist)
-        if let icon = request.dockIcon {
-            guard fm.fileExists(atPath: icon.path) else { throw InstallerError.missingResource(icon.path) }
-            let installedIcon = contents.appendingPathComponent("Resources/AppIcon.icns")
-            if fm.fileExists(atPath: installedIcon.path) { try fm.removeItem(at: installedIcon) }
-            try fm.copyItem(at: icon, to: installedIcon)
-            try setIconFile("AppIcon", inPlistAt: plist)
-        }
+        if let icon = request.dockIcon { guard fm.fileExists(atPath: icon.path) else { throw InstallerError.missingResource(icon.path) }; try fm.copyItem(at: icon, to: contents.appendingPathComponent("Resources/KakaoTalkWork.icns")); try setIconFile("KakaoTalkWork.icns", inPlistAt: plist) }
         let assets = contents.appendingPathComponent("Resources/Assets.car"), patched = contents.appendingPathComponent("Resources/.Assets.green.car")
         guard fm.fileExists(atPath: assets.path) else { throw InstallerError.missingResource(assets.path) }
         try AssetCatalogPatcher.patch(.init(sourceCatalog: assets, destinationCatalog: patched, allowedSourceSHA256: request.allowedAssetsSHA256)); _ = try fm.replaceItemAt(assets, withItemAt: patched)
@@ -202,23 +196,11 @@ public enum KakaoTalkWorkInstaller {
     }
     private static func validateStaged(_ request: PrivilegedInstallRequest) throws {
         let staged = URL(fileURLWithPath: request.stagedPath); try rejectLinkAndInsecure(staged)
-        guard FileManager.default.fileExists(atPath: staged.appendingPathComponent("Contents/Info.plist").path),
-              FileManager.default.fileExists(atPath: staged.appendingPathComponent("Contents/Resources/AppIcon.icns").path),
-              try SHA256.file(at: staged.appendingPathComponent("Contents/Resources/Assets.car")) == request.destinationCatalogSHA256
-        else { throw InstallerError.invalidRequest("Staged app changed after preparation.") }
+        guard FileManager.default.fileExists(atPath: staged.appendingPathComponent("Contents/Info.plist").path), try SHA256.file(at: staged.appendingPathComponent("Contents/Resources/Assets.car")) == request.destinationCatalogSHA256 else { throw InstallerError.invalidRequest("Staged app changed after preparation.") }
     }
     private static func destinationIsNoOp(_ destination: URL, request: PrivilegedInstallRequest) -> Bool {
-        guard FileManager.default.fileExists(atPath: destination.path),
-              let plist = try? Data(contentsOf: destination.appendingPathComponent("Contents/Info.plist")),
-              let dictionary = try? PropertyListSerialization.propertyList(from: plist, options: [], format: nil) as? [String: Any],
-              dictionary["CFBundleIdentifier"] as? String == bundleIdentifier,
-              dictionary["CFBundleExecutable"] as? String == executableName,
-              dictionary["CFBundleIconFile"] as? String == "AppIcon",
-              (try? SHA256.file(at: destination.appendingPathComponent("Contents/Resources/Assets.car"))) == request.destinationCatalogSHA256
-        else { return false }
-        let destinationIcon = destination.appendingPathComponent("Contents/Resources/AppIcon.icns")
-        let stagedIcon = URL(fileURLWithPath: request.stagedPath).appendingPathComponent("Contents/Resources/AppIcon.icns")
-        return (try? SHA256.file(at: destinationIcon)) == (try? SHA256.file(at: stagedIcon))
+        guard FileManager.default.fileExists(atPath: destination.path), let plist = try? Data(contentsOf: destination.appendingPathComponent("Contents/Info.plist")), let dictionary = try? PropertyListSerialization.propertyList(from: plist, options: [], format: nil) as? [String: Any], dictionary["CFBundleIdentifier"] as? String == bundleIdentifier, dictionary["CFBundleExecutable"] as? String == executableName else { return false }
+        return (try? SHA256.file(at: destination.appendingPathComponent("Contents/Resources/Assets.car"))) == request.destinationCatalogSHA256
     }
     private static func withExclusiveLock(_ body: () throws -> Void) throws {
         let fd = lockURL.path.withCString { Darwin.open($0, O_CREAT | O_RDWR | O_NOFOLLOW, mode_t(0o600)) }; guard fd >= 0 else { throw InstallerError.commandFailed("Cannot open installer lock.") }; defer { close(fd) }

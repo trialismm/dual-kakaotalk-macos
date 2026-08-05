@@ -247,6 +247,7 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
         if (carKey == nil) {
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"CoreUI could not encode the rendition key", error);
         }
+        BOOL standaloneReplacement = NO;
         if (internalLink) {
             NSData *csiData = ((id (*)(id, SEL, id))objc_msgSend)(assetStore, NSSelectorFromString(@"assetForKey:"), carKey);
             Class renditionClass = CUIBridgeClass(@"CUIThemeRendition", error);
@@ -275,28 +276,45 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
                     ? NSSelectorFromString(@"uncroppedImage")
                     : NULL);
             if (imageSelector == NULL) {
-                return CUIBridgeFail(CoreUIBridgeErrorSelectorUnavailable, @"CoreUI linked atlas image selector is unavailable", error);
+                // CoreUI 975 on Tahoe hides linked-atlas image access. assetutil
+                // still exposes each logical menu rendition as an independent
+                // image, so replace only the existing logical key with a
+                // standalone CSI rendition instead of rewriting the shared atlas.
+                standaloneReplacement = YES;
+                targetKeyList = existingKeyList;
+                carKey = ((id (*)(id, SEL, const void *))objc_msgSend)(structuredStore, keyDataSelector, targetKeyList);
+                if (carKey == nil) {
+                    return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"CoreUI could not encode the standalone rendition key", error);
+                }
             }
-            linkedAtlasImage = ((CGImageRef (*)(id, SEL))objc_msgSend)(target, imageSelector);
-            if (linkedAtlasImage == NULL) {
-                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas image is unavailable", error);
+            if (!standaloneReplacement) {
+                linkedAtlasImage = ((CGImageRef (*)(id, SEL))objc_msgSend)(target, imageSelector);
+                if (linkedAtlasImage == NULL) {
+                    return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas image is unavailable", error);
+                }
             }
         }
 
-        CGSize canvasSize = [target respondsToSelector:NSSelectorFromString(@"unslicedSize")]
-            ? ((CGSize (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"unslicedSize"))
-            : (linkedAtlasImage != NULL
-                ? CGSizeMake(CGImageGetWidth(linkedAtlasImage), CGImageGetHeight(linkedAtlasImage))
-                : CGSizeMake(width, height));
-        CGRect destination = [existing respondsToSelector:NSSelectorFromString(@"_destinationFrame")]
-            ? CUIBridgeSendCGRect(existing, NSSelectorFromString(@"_destinationFrame"))
-            : CGRectMake(0, 0, width, height);
-        CGRect targetSlice = [target respondsToSelector:NSSelectorFromString(@"_destinationFrame")]
-            ? CUIBridgeSendCGRect(target, NSSelectorFromString(@"_destinationFrame"))
-            : CGRectMake(0, 0, canvasSize.width, canvasSize.height);
+        CGSize canvasSize = standaloneReplacement
+            ? CGSizeMake(width, height)
+            : ([target respondsToSelector:NSSelectorFromString(@"unslicedSize")]
+                ? ((CGSize (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"unslicedSize"))
+                : (linkedAtlasImage != NULL
+                    ? CGSizeMake(CGImageGetWidth(linkedAtlasImage), CGImageGetHeight(linkedAtlasImage))
+                    : CGSizeMake(width, height)));
+        CGRect destination = standaloneReplacement
+            ? CGRectMake(0, 0, width, height)
+            : ([existing respondsToSelector:NSSelectorFromString(@"_destinationFrame")]
+                ? CUIBridgeSendCGRect(existing, NSSelectorFromString(@"_destinationFrame"))
+                : CGRectMake(0, 0, width, height));
+        CGRect targetSlice = standaloneReplacement
+            ? CGRectMake(0, 0, canvasSize.width, canvasSize.height)
+            : ([target respondsToSelector:NSSelectorFromString(@"_destinationFrame")]
+                ? CUIBridgeSendCGRect(target, NSSelectorFromString(@"_destinationFrame"))
+                : CGRectMake(0, 0, canvasSize.width, canvasSize.height));
         CGRect canvasBounds = CGRectMake(0, 0, canvasSize.width, canvasSize.height);
         if (canvasSize.width < 1 || canvasSize.height < 1 ||
-            (internalLink && !CGRectContainsRect(canvasBounds, destination))) {
+            (internalLink && !standaloneReplacement && !CGRectContainsRect(canvasBounds, destination))) {
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas geometry is invalid", error);
         }
 
@@ -318,7 +336,7 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"CoreUI mutable bitmap storage is unavailable", error);
         }
 
-        if (internalLink) {
+        if (internalLink && !standaloneReplacement) {
             CGContextDrawImage(context, canvasBounds, linkedAtlasImage);
             CGContextClearRect(context, destination);
         }
@@ -335,7 +353,7 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
         if (replacement == NULL) {
             return CUIBridgeFail(CoreUIBridgeErrorInvalidBitmap, @"Unable to create replacement image", error);
         }
-        CGContextDrawImage(context, internalLink ? destination : CGRectMake(0, 0, canvasSize.width, canvasSize.height), replacement);
+        CGContextDrawImage(context, internalLink && !standaloneReplacement ? destination : canvasBounds, replacement);
         CGImageRelease(replacement);
 
         long long type = [target respondsToSelector:NSSelectorFromString(@"type")]

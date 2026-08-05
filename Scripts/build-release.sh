@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 BUILD="$ROOT/.build-release"
 DIST="$ROOT/dist/Dual-KakaoTalk-for-macOS"
-ARTIFACT="$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.14.zip"
+ARTIFACT="$ROOT/dist/Dual-KakaoTalk-for-macOS-v0.1.0-beta.15.zip"
 MANIFEST="$ARTIFACT.manifest.json"
 DEPLOYMENT_TARGET=13.0
 
@@ -114,9 +114,9 @@ cat > "$PROGRESS_APP/Contents/Info.plist" <<'EOF'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0-beta.14</string>
+  <string>0.1.0-beta.15</string>
   <key>CFBundleVersion</key>
-  <string>14</string>
+  <string>15</string>
   <key>LSMinimumSystemVersion</key>
   <string>13.0</string>
 </dict>

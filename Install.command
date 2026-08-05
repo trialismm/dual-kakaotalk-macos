@@ -218,6 +218,10 @@ LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchS
 if [[ -x "$LSREGISTER" ]]; then
   "$LSREGISTER" -f "$DESTINATION"
 fi
+USER_CACHE_DIR="$(/usr/bin/getconf DARWIN_USER_CACHE_DIR)"
+if [[ "$USER_CACHE_DIR" == /var/folders/*/C/ ]]; then
+  /bin/rm -f "${USER_CACHE_DIR}com.apple.dock.iconcache"
+fi
 /usr/bin/killall Dock 2>/dev/null || true
 PHASE="complete"
 # Keep only five 0600, privacy-sanitized logs.

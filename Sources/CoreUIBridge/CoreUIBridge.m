@@ -259,27 +259,46 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
             // the legacy reconstruction initializer is unavailable.
             SEL initializer = NSSelectorFromString(@"initWithCSIData:forKey:");
             if ([renditionClass instancesRespondToSelector:initializer]) {
-                id reconstructed = ((id (*)(id, SEL, NSData *, const void *))objc_msgSend)(
-                    [renditionClass alloc], initializer, csiData, targetKeyList
-                );
+                CUIThemeRendition *reconstructed = [[renditionClass alloc] initWithCSIData:csiData forKey:targetKeyList];
                 if (reconstructed == nil) {
                     return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas rendition is invalid", error);
                 }
                 target = reconstructed;
-            } else if (![target respondsToSelector:NSSelectorFromString(@"unslicedImage")]) {
-                return CUIBridgeFail(CoreUIBridgeErrorSelectorUnavailable, @"CoreUI linked atlas access is unavailable", error);
+            }
+        }
+
+        CGImageRef linkedAtlasImage = NULL;
+        if (internalLink) {
+            SEL imageSelector = [target respondsToSelector:NSSelectorFromString(@"unslicedImage")]
+                ? NSSelectorFromString(@"unslicedImage")
+                : ([target respondsToSelector:NSSelectorFromString(@"uncroppedImage")]
+                    ? NSSelectorFromString(@"uncroppedImage")
+                    : NULL);
+            if (imageSelector == NULL) {
+                return CUIBridgeFail(CoreUIBridgeErrorSelectorUnavailable, @"CoreUI linked atlas image selector is unavailable", error);
+            }
+            linkedAtlasImage = ((CGImageRef (*)(id, SEL))objc_msgSend)(target, imageSelector);
+            if (linkedAtlasImage == NULL) {
+                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas image is unavailable", error);
             }
         }
 
         CGSize canvasSize = [target respondsToSelector:NSSelectorFromString(@"unslicedSize")]
             ? ((CGSize (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"unslicedSize"))
-            : CGSizeMake(width, height);
+            : (linkedAtlasImage != NULL
+                ? CGSizeMake(CGImageGetWidth(linkedAtlasImage), CGImageGetHeight(linkedAtlasImage))
+                : CGSizeMake(width, height));
         CGRect destination = [existing respondsToSelector:NSSelectorFromString(@"_destinationFrame")]
             ? CUIBridgeSendCGRect(existing, NSSelectorFromString(@"_destinationFrame"))
             : CGRectMake(0, 0, width, height);
         CGRect targetSlice = [target respondsToSelector:NSSelectorFromString(@"_destinationFrame")]
             ? CUIBridgeSendCGRect(target, NSSelectorFromString(@"_destinationFrame"))
             : CGRectMake(0, 0, canvasSize.width, canvasSize.height);
+        CGRect canvasBounds = CGRectMake(0, 0, canvasSize.width, canvasSize.height);
+        if (canvasSize.width < 1 || canvasSize.height < 1 ||
+            (internalLink && !CGRectContainsRect(canvasBounds, destination))) {
+            return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas geometry is invalid", error);
+        }
 
         Class mutableClass = CUIBridgeClass(@"CUIMutableCommonAssetStorage", error);
         Class generatorClass = CUIBridgeClass(@"CSIGenerator", error);
@@ -299,12 +318,8 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"CoreUI mutable bitmap storage is unavailable", error);
         }
 
-        if (internalLink && [target respondsToSelector:NSSelectorFromString(@"unslicedImage")]) {
-            CGImageRef existingImage = ((CGImageRef (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"unslicedImage"));
-            if (existingImage == NULL) {
-                return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"Linked atlas image is unavailable", error);
-            }
-            CGContextDrawImage(context, CGRectMake(0, 0, canvasSize.width, canvasSize.height), existingImage);
+        if (internalLink) {
+            CGContextDrawImage(context, canvasBounds, linkedAtlasImage);
             CGContextClearRect(context, destination);
         }
 

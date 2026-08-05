@@ -29,7 +29,7 @@ body:
       render: shell
       placeholder: |
         diagnostic.schema_version=1
-        diagnostic.uninstaller_version=0.1.0-beta.11
+        diagnostic.uninstaller_version=0.1.0-beta.12
         diagnostic.macos_version=13.7.8
         diagnostic.architecture=x86_64
         diagnostic.failure_phase=administrator_authorization

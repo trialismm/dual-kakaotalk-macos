@@ -6,7 +6,7 @@ HELPER="$ROOT/bin/dual-kakaotalk-tool"
 PROGRESS_APP="$ROOT/bin/DualKakaoProgress.app"
 PROGRESS_FILE="${TMPDIR:-/tmp}/DualKakaoTalk-uninstall-progress-$$.state"
 PROGRESS_STARTED=0
-UNINSTALLER_VERSION="0.1.0-beta.11"
+UNINSTALLER_VERSION="0.1.0-beta.12"
 PHASE="bootstrap"
 ERROR_LINE="unknown"
 LOG_DIR="$HOME/Library/Logs/DualKakaoTalk"
@@ -164,8 +164,8 @@ printf '%s\n' "$AUTH"
 on run argv
   set destinationPath to item 1 of argv
   set expectedBundleID to item 2 of argv
-  set commandText to "/usr/bin/test ! -L " & quoted form of destinationPath & " && " & ¬
-    "/usr/bin/test -d " & quoted form of destinationPath & " && " & ¬
+  set commandText to "/bin/test ! -L " & quoted form of destinationPath & " && " & ¬
+    "/bin/test -d " & quoted form of destinationPath & " && " & ¬
     "/usr/libexec/PlistBuddy -c " & quoted form of "Print :CFBundleIdentifier" & " " & quoted form of (destinationPath & "/Contents/Info.plist") & " | /usr/bin/grep -Fxq " & quoted form of expectedBundleID & " && " & ¬
     "/bin/rm -rf -- " & quoted form of destinationPath
   do shell script commandText with administrator privileges

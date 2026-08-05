@@ -31,12 +31,12 @@ Run every scenario using the shipped `Install.command`; no Xcode build, source c
 1. Ensure `/Applications/KakaoTalkWork.app` is absent. Keep `/Applications/KakaoTalk.app` untouched.
 2. Run `Install.command` and accept only normal macOS authorization prompts.
 3. Confirm both fixed paths exist afterward: `/Applications/KakaoTalk.app` and `/Applications/KakaoTalkWork.app`.
-4. Confirm the work copy reports bundle identifier `com.kakao.KakaoTalkWorkMac` and launches without replacing or modifying the personal app.
+4. Confirm Dual KakaoTalk reports bundle identifier `com.kakao.KakaoTalkWorkMac` and launches without replacing or modifying the personal app.
 
 ### 2. Update
 
 1. With a working `/Applications/KakaoTalkWork.app` from the fresh-install scenario, run the same `Install.command` again.
-2. Confirm it replaces/updates the work copy successfully while the personal app remains at `/Applications/KakaoTalk.app`.
+2. Confirm it replaces/updates Dual KakaoTalk successfully while the personal app remains at `/Applications/KakaoTalk.app`.
 3. Confirm both apps launch independently after the update.
 
 ### 3. No-op / unsupported fingerprint
@@ -44,14 +44,14 @@ Run every scenario using the shipped `Install.command`; no Xcode build, source c
 1. Do not alter either app manually. Use an official KakaoTalk build whose `Assets.car` fingerprint is not allowlisted, if available; otherwise record this scenario as not exercised rather than fabricating a result.
 2. Run `Install.command`.
 3. Confirm it fails closed before replacing `/Applications/KakaoTalkWork.app`, identifies the unsupported fingerprint, and opens or offers the compatibility issue URL.
-4. Confirm an existing work copy still launches after the failed attempt.
+4. Confirm the existing Dual KakaoTalk app still launches after the failed attempt.
 
 ## Visual checks
 
 With both apps running, capture screenshots showing:
 
-- separate Dock entries and the work app's muted-green Dock icon;
-- the personal and work app names, with the work copy identified as KakaoTalkWork;
+- separate Dock entries and Dual KakaoTalk's muted-green Dock icon;
+- the personal and Dual KakaoTalk app names, with the dual instance identified as KakaoTalkWork;
 - menu-bar normal, selected, and unread/badged states where those states can be produced naturally;
 - no missing, blank, or incorrectly colored menu-bar icons.
 
@@ -68,6 +68,6 @@ On success or failure, attach the following to the compatibility issue template 
 - redacted screenshots of the Dock and observable menu states;
 - relevant installer log from `~/Library/Logs/DualKakaoTalk/install-*.log`.
 
-Review logs and screenshots for account names, chat content, phone numbers, and paths before attaching them. For a failure, include the exact terminal/Finder error and preserve the failed work copy for investigation. File the issue through the installer-provided compatibility URL; do not attach Kakao binaries, `Assets.car`, icons, screenshots containing Kakao assets beyond the minimum UI evidence, or other Kakao application files.
+Review logs and screenshots for account names, chat content, phone numbers, and paths before attaching them. For a failure, include the exact terminal/Finder error and preserve the failed Dual KakaoTalk app for investigation. File the issue through the installer-provided compatibility URL; do not attach Kakao binaries, `Assets.car`, icons, screenshots containing Kakao assets beyond the minimum UI evidence, or other Kakao application files.
 
 Maintainers should mark Apple Silicon qualified only after reproducible evidence covers Gatekeeper/quarantine, a no-Xcode run, fresh install, update, no-op failure behavior, and Dock/menu observations.

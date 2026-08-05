@@ -2,7 +2,7 @@
 
 [한국어](README.md) | [English](README.en.md)
 
-Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applications/KakaoTalk.app`, allowing personal and work KakaoTalk accounts to run side by side. To distinguish the work app, it locally changes the Dock icon to muted green (`#628C73`) and the menu-bar icons to green (`#5B8A72`).
+Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applications/KakaoTalk.app`, allowing personal and Dual KakaoTalk accounts to run side by side. To distinguish Dual KakaoTalk, it locally changes the Dock icon to muted green (`#628C73`) and the menu-bar icons to green (`#5B8A72`).
 
 > [!WARNING]
 > This limited beta is intended only for the repository owner and acquaintances who trust the downloaded folder. It uses ad-hoc signing, an administrator prompt, and undocumented private macOS CoreUI APIs. It is not a notarized general-public installer. Verify the ZIP SHA-256 shown on the GitHub Release before running it. Apple or KakaoTalk updates may break it. Intel macOS 13 is verified; Apple Silicon remains **UNVERIFIED**.
@@ -18,22 +18,22 @@ Creates a separate `/Applications/KakaoTalkWork.app` from the official `/Applica
 
 1. Install or update official KakaoTalk at `/Applications/KakaoTalk.app`.
 2. Download and extract the ZIP from the [latest Release](https://github.com/hubeen/dual-kakaotalk-macos/releases/latest).
-3. Quit both personal and work KakaoTalk applications.
+3. Quit both personal and Dual KakaoTalk applications.
 4. Right-click `Install.command`, then select **Open → Open**.
 5. Approve the macOS administrator prompt using your password or Touch ID.
 6. After installation, both applications open:
-   - Personal: `/Applications/KakaoTalk.app`
-   - Work: `/Applications/KakaoTalkWork.app`
+   - Personal KakaoTalk: `/Applications/KakaoTalk.app`
+   - Dual KakaoTalk: `/Applications/KakaoTalkWork.app`
 
-After updating official KakaoTalk, quit both applications and run `Install.command` from the latest release again. The same command handles fresh installs and updates. The existing work app is backed up before replacement and restored if installation fails.
+After updating official KakaoTalk, quit both applications and run `Install.command` from the latest release again. The same command handles fresh installs and updates. The existing Dual KakaoTalk app is backed up before replacement and restored if installation fails.
 
 ## Uninstall
 
-1. Quit the work KakaoTalk application.
+1. Quit Dual KakaoTalk.
 2. Right-click `Uninstall.command` in the release folder, then select **Open → Open**.
 3. Approve the macOS administrator prompt.
 
-The uninstaller removes only `/Applications/KakaoTalkWork.app`. It preserves official `/Applications/KakaoTalk.app`, account/chat data, Keychain, and installer logs under `~/Library/Logs/DualKakaoTalk/`. It succeeds harmlessly when the work app is already absent, and refuses deletion if the fixed path is a symbolic link or has an unexpected bundle identifier.
+The uninstaller removes only `/Applications/KakaoTalkWork.app`. It preserves official `/Applications/KakaoTalk.app`, account/chat data, Keychain, and installer logs under `~/Library/Logs/DualKakaoTalk/`. It succeeds harmlessly when Dual KakaoTalk is already absent, and refuses deletion if the fixed path is a symbolic link or has an unexpected bundle identifier.
 
 ## What the installer does
 
@@ -42,10 +42,10 @@ The uninstaller removes only `/Applications/KakaoTalkWork.app`. It preserves off
 - Uses administrator privileges only to import a fixed-format, digest-bound request.
 - Uses an exclusive lock and write-ahead recovery journal for concurrent or interrupted installations.
 - Shows a dedicated macOS progress bar and step description during installation and removal.
-- Assigns the fixed work-app identity:
+- Assigns the fixed Dual KakaoTalk identity:
   - Name and executable: `KakaoTalkWork`
   - Bundle ID: `com.kakao.KakaoTalkWorkMac`
-- Opens both personal and work applications after installation.
+- Opens personal and Dual KakaoTalk after installation.
 
 The installer does not access or modify:
 

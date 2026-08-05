@@ -81,7 +81,7 @@ The release contains a Universal x86_64 and arm64 helper. `Assets.car` mutation 
 - Official app updates are not copied automatically; run `Install.command` again.
 - Ad-hoc signing may trigger macOS security warnings.
 - Installation fails closed if Apple or KakaoTalk changes an internal format.
-- Apple Silicon is verified on M3/macOS 26.5.2; other chip and macOS combinations remain experimental.
+- M1 through M5 use the same arm64 Universal build, so there is no chip-specific implementation. M3/macOS 26.5.2 is physically verified; the remaining chip and macOS combinations require physical-device validation.
 - This trusted-circle beta is not a notarized installer for general redistribution.
 
 ## Non-affiliation and rights

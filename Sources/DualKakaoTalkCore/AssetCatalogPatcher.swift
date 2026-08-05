@@ -64,6 +64,8 @@ public enum AssetCatalogPatcher {
         "MenuIcon", "MenuIconWithNew", "DarkMenuIcon", "DarkMenuIconWithNew",
         "LoggedoutMenuIcon", "LoggedoutDarkMenuIcon", "AlternateMenuIcon", "AlternateDarkMenuIcon",
     ]
+    private static let dockIconName = "AppIcon"
+    private static var mutationNames: Set<String> { allowedNames.union([dockIconName]) }
 
     public static let supportedCatalogSHA256: Set<String> = [
         "383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416"
@@ -106,6 +108,20 @@ public enum AssetCatalogPatcher {
             }
         }
     }
+    private static func validateDockRenditions(_ renditions: [AssetCatalogRendition]) throws {
+        let expectedDimensions: Set<Int> = [16, 32, 64, 128, 256, 512, 1024]
+        guard renditions.count == 10 else {
+            throw AssetCatalogPatcherError.unexpectedRenditionCount(renditions.count)
+        }
+        for rendition in renditions {
+            guard rendition.name == dockIconName,
+                  rendition.width == rendition.height,
+                  expectedDimensions.contains(rendition.width),
+                  rendition.scale == 1 || rendition.scale == 2 else {
+                throw AssetCatalogPatcherError.unexpectedRendition(rendition)
+            }
+        }
+    }
 
     /// Creates and patches only destinationCatalog, leaving sourceCatalog untouched.
     public static func patch(_ plan: AssetCatalogMutationPlan) throws {
@@ -115,8 +131,11 @@ public enum AssetCatalogPatcher {
         }
         try FileManager.default.copyItem(at: plan.sourceCatalog, to: plan.destinationCatalog)
         let before = try renditions(in: plan.destinationCatalog)
-        let targets = before.filter { allowedNames.contains($0.name) }
-        try validateTargetRenditions(targets)
+        let menuTargets = before.filter { allowedNames.contains($0.name) }
+        let dockTargets = before.filter { $0.name == dockIconName }
+        try validateTargetRenditions(menuTargets)
+        try validateDockRenditions(dockTargets)
+        let targets = menuTargets + dockTargets
         var expectedPixels: [String: Data] = [:]
         for rendition in targets {
             guard rendition.rgbaData.count == rendition.width * rendition.height * 4 else {
@@ -133,24 +152,27 @@ public enum AssetCatalogPatcher {
                         blue: unpremultiply(bytes[offset + 2], alpha: alpha),
                         alpha: alpha
                     )
-                    let output = ColorTransformer.transform(straight, variant: .menuBar)
+                    let output = ColorTransformer.transform(straight, variant: rendition.name == dockIconName ? .dock : .menuBar)
                     bytes[offset] = premultiply(output.red, alpha: output.alpha)
                     bytes[offset + 1] = premultiply(output.green, alpha: output.alpha)
                     bytes[offset + 2] = premultiply(output.blue, alpha: output.alpha)
                     bytes[offset + 3] = output.alpha
                 }
             }
-            expectedPixels["\(rendition.name)/\(rendition.scale)"] = pixels
+            expectedPixels["\(rendition.name)/\(rendition.scale)/\(rendition.width)x\(rendition.height)"] = pixels
             var error: NSError?
             guard CoreUIBridgeReplaceNamedImageRendition(plan.destinationCatalog, rendition.name, rendition.scale, rendition.width, rendition.height, pixels, &error) else {
                 throw AssetCatalogPatcherError.bridge(error?.localizedDescription ?? "CoreUI replacement failed.")
             }
         }
         let after = try renditions(in: plan.destinationCatalog)
-        let patched = after.filter { allowedNames.contains($0.name) }
-        try validateTargetRenditions(patched, requireInternalLinks: false)
+        let patchedMenu = after.filter { allowedNames.contains($0.name) }
+        let patchedDock = after.filter { $0.name == dockIconName }
+        try validateTargetRenditions(patchedMenu, requireInternalLinks: false)
+        try validateDockRenditions(patchedDock)
+        let patched = patchedMenu + patchedDock
         for rendition in patched {
-            guard let expected = expectedPixels["\(rendition.name)/\(rendition.scale)"],
+            guard let expected = expectedPixels["\(rendition.name)/\(rendition.scale)/\(rendition.width)x\(rendition.height)"],
                   validatesTransformedPixels(rendition.rgbaData, expected: expected) else {
                 throw AssetCatalogPatcherError.postWriteValidationFailed
             }
@@ -221,7 +243,7 @@ public enum AssetCatalogPatcher {
     }
     private static func nonTargetMetadata(_ renditions: [AssetCatalogRendition]) -> [String] {
         renditions
-            .filter { !allowedNames.contains($0.name) }
+            .filter { !mutationNames.contains($0.name) }
             .map { "\($0.name)/\($0.scale)/\($0.width)x\($0.height)/\($0.hasInternalLink)/\(SHA256.data($0.rgbaData))" }
             .sorted()
     }

@@ -215,7 +215,14 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
             double candidateScale = [candidate respondsToSelector:NSSelectorFromString(@"scale")]
                 ? ((double (*)(id, SEL))objc_msgSend)(candidate, NSSelectorFromString(@"scale"))
                 : 0;
-            if ([candidateName isEqualToString:name] && llround(candidateScale) == scale) {
+            CGImageRef candidateImage = [candidate respondsToSelector:NSSelectorFromString(@"uncroppedImage")]
+                ? ((CGImageRef (*)(id, SEL))objc_msgSend)(candidate, NSSelectorFromString(@"uncroppedImage"))
+                : NULL;
+            if ([candidateName isEqualToString:name] &&
+                llround(candidateScale) == scale &&
+                candidateImage != NULL &&
+                CGImageGetWidth(candidateImage) == width &&
+                CGImageGetHeight(candidateImage) == height) {
                 existing = candidate;
                 existingKeyList = keyList;
                 break;

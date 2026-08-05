@@ -370,15 +370,16 @@ BOOL CoreUIBridgeReplaceNamedImageRendition(NSURL *catalogURL, NSString *name, N
         if (generator == nil) {
             return CUIBridgeFail(CoreUIBridgeErrorMutationUnsupported, @"CoreUI generator is unavailable", error);
         }
+        id metadataSource = standaloneReplacement ? existing : target;
 
-        CUIBridgeSetObject(generator, @"setName:", [target respondsToSelector:NSSelectorFromString(@"name")]
-            ? ((id (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"name")) : name);
-        CUIBridgeSetDouble(generator, @"setOpacity:", [target respondsToSelector:NSSelectorFromString(@"opacity")]
-            ? ((double (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"opacity")) : 1.0);
-        CUIBridgeSetInteger(generator, @"setScaleFactor:", [target respondsToSelector:NSSelectorFromString(@"scale")]
-            ? llround(((double (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"scale"))) : scale);
-        CUIBridgeSetInteger(generator, @"setTemplateRenderingMode:", [target respondsToSelector:NSSelectorFromString(@"templateRenderingMode")]
-            ? ((long long (*)(id, SEL))objc_msgSend)(target, NSSelectorFromString(@"templateRenderingMode")) : 0);
+        CUIBridgeSetObject(generator, @"setName:", [metadataSource respondsToSelector:NSSelectorFromString(@"name")]
+            ? ((id (*)(id, SEL))objc_msgSend)(metadataSource, NSSelectorFromString(@"name")) : name);
+        CUIBridgeSetDouble(generator, @"setOpacity:", [metadataSource respondsToSelector:NSSelectorFromString(@"opacity")]
+            ? ((double (*)(id, SEL))objc_msgSend)(metadataSource, NSSelectorFromString(@"opacity")) : 1.0);
+        CUIBridgeSetInteger(generator, @"setScaleFactor:", [metadataSource respondsToSelector:NSSelectorFromString(@"scale")]
+            ? llround(((double (*)(id, SEL))objc_msgSend)(metadataSource, NSSelectorFromString(@"scale"))) : scale);
+        CUIBridgeSetInteger(generator, @"setTemplateRenderingMode:", [metadataSource respondsToSelector:NSSelectorFromString(@"templateRenderingMode")]
+            ? ((long long (*)(id, SEL))objc_msgSend)(metadataSource, NSSelectorFromString(@"templateRenderingMode")) : 0);
         ((void (*)(id, SEL, id))objc_msgSend)(generator, NSSelectorFromString(@"addBitmap:"), bitmap);
         ((void (*)(id, SEL, CGRect))objc_msgSend)(generator, NSSelectorFromString(@"addSliceRect:"), targetSlice);
         NSData *csi = ((id (*)(id, SEL, BOOL))objc_msgSend)(generator, NSSelectorFromString(@"CSIRepresentationWithCompression:"), YES);

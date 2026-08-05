@@ -15,7 +15,7 @@ private func fail(_ message: String, code: Exit) -> Never {
 
 private let arguments = Array(CommandLine.arguments.dropFirst())
 guard let command = arguments.first else {
-    fail("usage: dual-kakaotalk-tool <inspect|recolor|catalog-capability|catalog-list|catalog-patch|prepare-install|install|install-staged|set-dock-icon>", code: .usage)
+    fail("usage: dual-kakaotalk-tool <inspect|recolor|catalog-capability|catalog-list|catalog-patch|prepare-install|install|install-staged|write-dock-icon|progress-window>", code: .usage)
 }
 
 do {
@@ -108,6 +108,12 @@ do {
         }
         try writeDockIcon(sourceApp: arguments[1], output: arguments[2])
 
+    case "progress-window":
+        guard arguments.count == 3 else {
+            fail("usage: progress-window <state-file> <window-title>", code: .usage)
+        }
+        runProgressWindow(stateFile: arguments[1], title: arguments[2])
+
     default:
         fail("unknown command: \(command)", code: .usage)
     }
@@ -155,6 +161,86 @@ private func writeDockIcon(sourceApp: String, output: String) throws {
     guard process.terminationStatus == 0 else {
         throw InstallerError.commandFailed("iconutil could not create the Dock icon.")
     }
+}
+
+private final class ProgressWindowController: NSObject, NSApplicationDelegate {
+    private let stateFile: String
+    private let title: String
+    private let progressIndicator = NSProgressIndicator(frame: NSRect(x: 0, y: 0, width: 360, height: 20))
+    private var alert: NSAlert?
+    private var timer: Timer?
+
+    init(stateFile: String, title: String) {
+        self.stateFile = stateFile
+        self.title = title
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = " "
+        alert.alertStyle = .informational
+
+        progressIndicator.isIndeterminate = false
+        progressIndicator.minValue = 0
+        progressIndicator.maxValue = 100
+        progressIndicator.doubleValue = 0
+        alert.accessoryView = progressIndicator
+
+        let button = alert.addButton(withTitle: "…")
+        button.isEnabled = false
+        self.alert = alert
+
+        timer = Timer(timeInterval: 0.15, repeats: true) { [weak self] _ in
+            self?.refresh()
+        }
+        RunLoop.main.add(timer!, forMode: .common)
+        refresh()
+        alert.window.level = .floating
+        alert.window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        alert.window.center()
+        alert.window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
+    }
+
+    private func refresh() {
+        guard let contents = try? String(contentsOfFile: stateFile, encoding: .utf8) else { return }
+        let fields = contents.split(separator: "\n", omittingEmptySubsequences: false)
+        guard fields.count >= 3, let percent = Double(fields[0]) else { return }
+
+        progressIndicator.doubleValue = min(100, max(0, percent))
+        alert?.informativeText = String(fields[1])
+
+        switch fields[2] {
+        case "done":
+            progressIndicator.doubleValue = 100
+            finish(after: 0.5)
+        case "failed":
+            finish(after: 1.5)
+        default:
+            break
+        }
+    }
+
+    private func finish(after delay: TimeInterval) {
+        timer?.invalidate()
+        timer = nil
+        try? FileManager.default.removeItem(atPath: stateFile)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            NSApp.abortModal()
+            NSApp.terminate(nil)
+        }
+    }
+}
+
+private func runProgressWindow(stateFile: String, title: String) -> Never {
+    let app = NSApplication.shared
+    app.setActivationPolicy(.regular)
+    let controller = ProgressWindowController(stateFile: stateFile, title: title)
+    app.delegate = controller
+    app.run()
+    Foundation.exit(EXIT_SUCCESS)
 }
 
 private extension NSBitmapImageRep {

@@ -4,6 +4,7 @@ umask 077
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 HELPER="$ROOT/bin/dual-kakaotalk-tool"
+PROGRESS_APP="$ROOT/bin/DualKakaoProgress.app"
 SOURCE="/Applications/KakaoTalk.app"
 DESTINATION="/Applications/KakaoTalkWork.app"
 HASHES="$ROOT/Compatibility/asset-sha256.txt"
@@ -14,6 +15,8 @@ ICON=""
 LOG_DIR="$HOME/Library/Logs/DualKakaoTalk"
 mkdir -p -m 700 "$LOG_DIR"
 LOG="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S)-$$.log"
+PROGRESS_FILE="${TMPDIR:-/tmp}/DualKakaoTalk-progress-$$.state"
+PROGRESS_STARTED=0
 # Refuse a pre-existing/symlink log, then keep all installer output private to this user.
 set -o noclobber
 : > "$LOG"
@@ -65,13 +68,24 @@ diagnostic() {
 }
 
 progress() {
-  local current="$1" total="$2" message="$3"
+  local current="$1" total="$2" message="$3" percent temporary
+  percent=$((current * 100 / total))
   printf '\n[%s/%s] %s\n' "$current" "$total" "$message"
-  /usr/bin/osascript - "$PROGRESS_TITLE" "$message" <<'APPLESCRIPT' >/dev/null 2>&1 || true
-on run argv
-  display notification (item 2 of argv) with title (item 1 of argv)
-end run
-APPLESCRIPT
+  temporary="$PROGRESS_FILE.tmp"
+  printf '%s\n%s\nrunning\n' "$percent" "$message" > "$temporary"
+  /bin/mv -f "$temporary" "$PROGRESS_FILE"
+  if (( PROGRESS_STARTED == 0 )); then
+    /usr/bin/open -n "$PROGRESS_APP" --args progress-window "$PROGRESS_FILE" "$PROGRESS_TITLE"
+    PROGRESS_STARTED=1
+  fi
+}
+
+finish_progress() {
+  local state="$1" message="$2" temporary="$PROGRESS_FILE.tmp"
+  if (( PROGRESS_STARTED == 1 )); then
+    printf '100\n%s\n%s\n' "$message" "$state" > "$temporary"
+    /bin/mv -f "$temporary" "$PROGRESS_FILE"
+  fi
 }
 
 diagnostic schema_version 1
@@ -90,6 +104,11 @@ on_exit() {
     diagnostic failure_phase "$PHASE"
     diagnostic exit_code "$status"
     diagnostic log_file "$(basename "$LOG")"
+  fi
+  if (( status == 0 )); then
+    finish_progress done "$DONE"
+  else
+    finish_progress failed "$FAILURE"
   fi
 }
 trap on_exit EXIT
@@ -117,12 +136,17 @@ printf '%s\n' "$START"
 major="$(sw_vers -productVersion | cut -d. -f1)"
 if (( major < 13 )); then printf 'macOS Ventura 13 or newer is required.\n'; exit 1; fi
 PHASE="helper_validation"
-progress 1 7 "$STEP_1"
 [[ -x "$HELPER" ]] || { printf 'Installer helper is missing or not executable.\n'; exit 1; }
-# The user has explicitly opened this installer; clear inherited archive quarantine only from the bundled helper.
+[[ -d "$PROGRESS_APP" && ! -L "$PROGRESS_APP" ]] || { printf 'Installer progress application is missing.\n'; exit 1; }
+# The user has explicitly opened this installer; clear inherited archive quarantine only from bundled executables.
 if /usr/bin/xattr -p com.apple.quarantine "$HELPER" >/dev/null 2>&1; then
   /usr/bin/xattr -d com.apple.quarantine "$HELPER"
 fi
+if /usr/bin/xattr -p com.apple.quarantine "$PROGRESS_APP" >/dev/null 2>&1; then
+  /usr/bin/xattr -dr com.apple.quarantine "$PROGRESS_APP"
+fi
+/usr/bin/codesign --verify --deep --strict "$PROGRESS_APP"
+progress 1 7 "$STEP_1"
 /usr/bin/codesign --verify --strict "$HELPER"
 diagnostic helper_sha256 "$(/usr/bin/shasum -a 256 "$HELPER" | /usr/bin/cut -d' ' -f1)"
 diagnostic helper_architectures "$(/usr/bin/lipo -archs "$HELPER")"

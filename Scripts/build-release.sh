@@ -49,7 +49,13 @@ audit_archive() {
   while IFS= read -r entry; do
     entry_lower="$(printf '%s' "$entry" | tr '[:upper:]' '[:lower:]')"
     case "$entry_lower" in
-      *.app|*.app/*|*.car|*.icns|*.png|*.jpg|*.jpeg|*.gif|*.zip)
+      *.app|*.app/*)
+        case "$entry" in
+          */bin/DualKakaoProgress.app|*/bin/DualKakaoProgress.app/*) ;;
+          *) fail "archive contains forbidden application bundle: $entry" ;;
+        esac
+        ;;
+      *.car|*.icns|*.png|*.jpg|*.jpeg|*.gif|*.zip)
         fail "archive contains forbidden Kakao asset name: $entry"
         ;;
     esac
@@ -89,6 +95,34 @@ chmod +x "$DIST/bin/dual-kakaotalk-tool"
 require_universal_slice "$DIST/bin/dual-kakaotalk-tool" x86_64
 require_universal_slice "$DIST/bin/dual-kakaotalk-tool" arm64
 
+PROGRESS_APP="$DIST/bin/DualKakaoProgress.app"
+mkdir -p "$PROGRESS_APP/Contents/MacOS"
+cp "$DIST/bin/dual-kakaotalk-tool" "$PROGRESS_APP/Contents/MacOS/dual-kakaotalk-tool"
+cat > "$PROGRESS_APP/Contents/Info.plist" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>ko</string>
+  <key>CFBundleExecutable</key>
+  <string>dual-kakaotalk-tool</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.hubeen.DualKakaoTalk.Progress</string>
+  <key>CFBundleName</key>
+  <string>Dual KakaoTalk</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+</dict>
+</plist>
+EOF
+
 cp "$ROOT/Install.command" "$DIST/Install.command"
 chmod +x "$DIST/Install.command"
 cp "$ROOT/Uninstall.command" "$DIST/Uninstall.command"
@@ -100,11 +134,13 @@ cp "$ROOT/LICENSE" "$DIST/LICENSE.txt"
 
 codesign --force --sign - "$DIST/bin/dual-kakaotalk-tool"
 codesign --verify --strict --verbose=2 "$DIST/bin/dual-kakaotalk-tool"
+codesign --force --deep --sign - "$PROGRESS_APP"
+codesign --verify --deep --strict --verbose=2 "$PROGRESS_APP"
 "$ROOT/Scripts/verify-no-kakao-assets.sh"
 
 mkdir -p "$ROOT/dist"
 rm -f "$ARTIFACT" "$MANIFEST"
-ditto -c -k --keepParent "$DIST" "$ARTIFACT"
+ditto --norsrc -c -k --keepParent "$DIST" "$ARTIFACT"
 audit_archive "$ARTIFACT"
 
 artifact_sha256="$(shasum -a 256 "$ARTIFACT" | awk '{print $1}')"

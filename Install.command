@@ -208,16 +208,17 @@ progress 7 7 "$STEP_7"
 diagnostic result success
 diagnostic installed_bundle_id "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$DESTINATION/Contents/Info.plist")"
 diagnostic installed_icon_file "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$DESTINATION/Contents/Info.plist")"
+PHASE="launch"
+printf '%s\n' "$DONE"
+open "$SOURCE"
+open -n "$DESTINATION"
 PHASE="dock_icon_refresh"
+sleep 1
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 if [[ -x "$LSREGISTER" ]]; then
   "$LSREGISTER" -f "$DESTINATION"
 fi
 /usr/bin/killall Dock 2>/dev/null || true
-PHASE="launch"
-printf '%s\n' "$DONE"
-open "$SOURCE"
-open -n "$DESTINATION"
 PHASE="complete"
 # Keep only five 0600, privacy-sanitized logs.
 /usr/bin/find "$LOG_DIR" -type f -name 'install-*.log' -print0 | /usr/bin/xargs -0 ls -1t 2>/dev/null | /usr/bin/awk 'NR>5' | while IFS= read -r old; do rm -f "$old"; done

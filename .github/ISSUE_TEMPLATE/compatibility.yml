@@ -24,12 +24,12 @@ body:
   - type: textarea
     id: diagnostic_log
     attributes:
-      label: 구조화된 설치 로그 / Structured installer log
-      description: 가장 최근 로그 전체를 붙여 넣으세요. diagnostic.* 행을 삭제하지 마세요.
+      label: 구조화된 작업 로그 / Structured operation log
+      description: 가장 최근 install 또는 uninstall 로그 전체를 붙여 넣으세요. diagnostic.* 행을 삭제하지 마세요.
       render: shell
       placeholder: |
         diagnostic.schema_version=1
-        diagnostic.installer_version=0.1.0-beta.9
+        diagnostic.installer_version=0.1.0-beta.10
         diagnostic.macos_version=13.7.8
         diagnostic.architecture=x86_64
         diagnostic.failure_phase=administrator_authorization

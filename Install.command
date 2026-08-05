@@ -32,6 +32,14 @@ if [[ "$LANG_CODE" == ko* ]]; then
   FAILURE="설치에 실패했습니다. 개인정보를 확인한 뒤 로그와 함께 GitHub 이슈를 등록하시겠습니까?"
   REPORT_BUTTON="이슈 등록"
   CANCEL_BUTTON="취소"
+  PROGRESS_TITLE="Dual KakaoTalk 설치"
+  STEP_1="설치 프로그램을 확인하고 있습니다."
+  STEP_2="공식 KakaoTalk 호환성을 확인하고 있습니다."
+  STEP_3="실행 중인 KakaoTalk을 종료하고 있습니다."
+  STEP_4="초록색 아이콘을 생성하고 있습니다."
+  STEP_5="업무용 앱을 복사·변경·서명하고 있습니다. 잠시 기다려 주세요."
+  STEP_6="관리자 승인 후 업무용 앱을 설치하고 있습니다."
+  STEP_7="설치 결과를 확인하고 앱을 실행하고 있습니다."
 else
   START="Starting Dual KakaoTalk installation."
   MISSING="Install the official KakaoTalk app at /Applications/KakaoTalk.app, then run this installer again."
@@ -42,10 +50,28 @@ else
   FAILURE="Installation failed. Review the log for personal information, then open a GitHub issue?"
   REPORT_BUTTON="Open Issue"
   CANCEL_BUTTON="Cancel"
+  PROGRESS_TITLE="Dual KakaoTalk Installation"
+  STEP_1="Checking the installer."
+  STEP_2="Checking official KakaoTalk compatibility."
+  STEP_3="Closing running KakaoTalk applications."
+  STEP_4="Generating the green icons."
+  STEP_5="Copying, modifying, and signing the work app. This may take a moment."
+  STEP_6="Installing the work app after administrator approval."
+  STEP_7="Verifying the installation and opening both apps."
 fi
 
 diagnostic() {
   printf 'diagnostic.%s=%s\n' "$1" "$2"
+}
+
+progress() {
+  local current="$1" total="$2" message="$3"
+  printf '\n[%s/%s] %s\n' "$current" "$total" "$message"
+  /usr/bin/osascript - "$PROGRESS_TITLE" "$message" <<'APPLESCRIPT' >/dev/null 2>&1 || true
+on run argv
+  display notification (item 2 of argv) with title (item 1 of argv)
+end run
+APPLESCRIPT
 }
 
 diagnostic schema_version 1
@@ -91,6 +117,7 @@ printf '%s\n' "$START"
 major="$(sw_vers -productVersion | cut -d. -f1)"
 if (( major < 13 )); then printf 'macOS Ventura 13 or newer is required.\n'; exit 1; fi
 PHASE="helper_validation"
+progress 1 7 "$STEP_1"
 [[ -x "$HELPER" ]] || { printf 'Installer helper is missing or not executable.\n'; exit 1; }
 # The user has explicitly opened this installer; clear inherited archive quarantine only from the bundled helper.
 if /usr/bin/xattr -p com.apple.quarantine "$HELPER" >/dev/null 2>&1; then
@@ -100,6 +127,7 @@ fi
 diagnostic helper_sha256 "$(/usr/bin/shasum -a 256 "$HELPER" | /usr/bin/cut -d' ' -f1)"
 diagnostic helper_architectures "$(/usr/bin/lipo -archs "$HELPER")"
 PHASE="source_validation"
+progress 2 7 "$STEP_2"
 [[ -d "$SOURCE" && ! -L "$SOURCE" ]] || { printf '%s\n' "$MISSING"; exit 1; }
 assets="$SOURCE/Contents/Resources/Assets.car"
 [[ -f "$assets" && ! -L "$assets" ]] || { printf '%s\n' "$MISSING"; exit 1; }
@@ -118,6 +146,7 @@ if ! /usr/bin/grep -Fxq "$hash" "$HASHES"; then
 fi
 if [[ "$(uname -m)" == arm64 ]]; then printf '%s\n' "$ARM_WARNING"; fi
 PHASE="application_shutdown"
+progress 3 7 "$STEP_3"
 /usr/bin/osascript -e 'tell application id "com.kakao.KakaoTalkMac" to quit' 2>/dev/null || true
 /usr/bin/osascript -e 'tell application id "com.kakao.KakaoTalkWorkMac" to quit' 2>/dev/null || true
 for _ in {1..20}; do
@@ -130,13 +159,16 @@ if /usr/bin/pgrep -x KakaoTalk >/dev/null || /usr/bin/pgrep -x KakaoTalkWork >/d
 fi
 
 PHASE="icon_generation"
+progress 4 7 "$STEP_4"
 ICON="${TMPDIR:-/tmp}/DualKakaoTalkWork-$$.icns"
 "$HELPER" write-dock-icon "$SOURCE" "$ICON"
 PHASE="staging_preparation"
+progress 5 7 "$STEP_5"
 # Preparation, catalog mutation and ad-hoc signing happen before administrator authorization.
 REQUEST="$("$HELPER" prepare-install "$hash" "$ICON" "1.0")"
 [[ "$REQUEST" == /private/tmp/DualKakaoTalk-*/* || "$REQUEST" == /tmp/DualKakaoTalk-*/* ]] || { printf 'Invalid staging receipt.\n'; exit 1; }
 PHASE="administrator_authorization"
+progress 6 7 "$STEP_6"
 /usr/bin/osascript - "$HELPER" "$REQUEST" <<'APPLESCRIPT'
 on run argv
   set helperPath to item 1 of argv
@@ -145,6 +177,7 @@ on run argv
 end run
 APPLESCRIPT
 PHASE="installed_app_verification"
+progress 7 7 "$STEP_7"
 /usr/bin/codesign --verify --deep --strict "$DESTINATION"
 diagnostic result success
 diagnostic installed_bundle_id "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$DESTINATION/Contents/Info.plist")"

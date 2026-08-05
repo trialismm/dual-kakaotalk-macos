@@ -41,6 +41,7 @@ The uninstaller removes only `/Applications/KakaoTalkWork.app`. It preserves off
 - Copies, recolors, ad-hoc signs, and verifies the staged app without administrator privileges.
 - Uses administrator privileges only to import a fixed-format, digest-bound request.
 - Uses an exclusive lock and write-ahead recovery journal for concurrent or interrupted installations.
+- Shows the current installation stage through `[step/7]` terminal output and macOS notifications.
 - Assigns the fixed work-app identity:
   - Name and executable: `KakaoTalkWork`
   - Bundle ID: `com.kakao.KakaoTalkWorkMac`

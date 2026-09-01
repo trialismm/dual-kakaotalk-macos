@@ -27,7 +27,7 @@ Dock에서는 표시 이름으로 두 앱을 구분할 수 있습니다.
 
 - macOS Ventura 13 이상
 - 공식 KakaoTalk: `/Applications/KakaoTalk.app`
-- 현재 지원 버전: KakaoTalk 26.6.1 (빌드 1190)
+- 현재 지원 버전: KakaoTalk 26.7.0 (빌드 1194)
 - 최종 사용자는 Xcode가 필요하지 않습니다.
 
 ## 설치 또는 업데이트

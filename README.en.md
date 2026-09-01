@@ -27,7 +27,7 @@ The Dock distinguishes the apps by their localized names:
 
 - macOS Ventura 13 or newer
 - Official KakaoTalk at `/Applications/KakaoTalk.app`
-- Currently supported KakaoTalk: 26.6.1 (build 1190)
+- Currently supported KakaoTalk: 26.7.0 (build 1194)
 - End users do not need Xcode.
 
 ## Install or update

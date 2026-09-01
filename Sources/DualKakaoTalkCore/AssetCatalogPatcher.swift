@@ -66,7 +66,7 @@ public enum AssetCatalogPatcher {
     ]
 
     public static let supportedCatalogSHA256: Set<String> = [
-        "383b3f691433893cfc648ca165bca02e995fd2510608a34eb90328edcca6f416"
+        "7bc875de46be77edfcf663f4b112a5e3d8e9d88495ba85aae8016cf5b4223b14"
     ]
     public static func validate(plan: AssetCatalogMutationPlan) throws {
         guard plan.sourceCatalog.standardizedFileURL != plan.destinationCatalog.standardizedFileURL else {

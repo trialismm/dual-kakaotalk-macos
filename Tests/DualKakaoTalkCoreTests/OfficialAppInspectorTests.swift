@@ -5,6 +5,11 @@ import XCTest
 final class OfficialAppInspectorTests: XCTestCase {
     private var temporaryDirectory: URL!
 
+    func testExpectedVersionMatchesCurrentSupportedRelease() {
+        XCTAssertEqual(OfficialAppInspector.expectedShortVersion, "26.7.0")
+        XCTAssertEqual(OfficialAppInspector.expectedBuildVersion, "1194")
+    }
+
     override func setUpWithError() throws {
         temporaryDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

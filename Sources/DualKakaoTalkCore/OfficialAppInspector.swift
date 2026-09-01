@@ -13,8 +13,8 @@ public enum OfficialAppInspector {
     public static let supportedPath = "/Applications/KakaoTalk.app"
     public static let expectedBundleIdentifier = "com.kakao.KakaoTalkMac"
     public static let expectedTeamIdentifier = "L75WVXX68A"
-    public static let expectedShortVersion = "26.6.1"
-    public static let expectedBuildVersion = "1190"
+    public static let expectedShortVersion = "26.7.0"
+    public static let expectedBuildVersion = "1194"
 
     public static func inspect(path: String = supportedPath) throws -> OfficialAppFacts {
         let appURL = URL(fileURLWithPath: path, isDirectory: true)

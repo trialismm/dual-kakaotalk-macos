@@ -6,7 +6,7 @@ final class AssetCatalogPatcherTests: XCTestCase {
     func testSupportedFingerprintMatchesCurrentKakaoTalkCatalog() {
         XCTAssertEqual(
             AssetCatalogPatcher.supportedCatalogSHA256,
-            ["7bc875de46be77edfcf663f4b112a5e3d8e9d88495ba85aae8016cf5b4223b14"]
+            ["2d47e3d6cf38e3b91e32e13b4125054075a13a15f27916b2a77531ebe0a92036"]
         )
     }
 

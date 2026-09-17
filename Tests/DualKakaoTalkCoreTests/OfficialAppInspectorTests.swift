@@ -6,8 +6,8 @@ final class OfficialAppInspectorTests: XCTestCase {
     private var temporaryDirectory: URL!
 
     func testExpectedVersionMatchesCurrentSupportedRelease() {
-        XCTAssertEqual(OfficialAppInspector.expectedShortVersion, "26.7.0")
-        XCTAssertEqual(OfficialAppInspector.expectedBuildVersion, "1194")
+        XCTAssertEqual(OfficialAppInspector.expectedShortVersion, "26.8.0")
+        XCTAssertEqual(OfficialAppInspector.expectedBuildVersion, "2000")
     }
 
     override func setUpWithError() throws {

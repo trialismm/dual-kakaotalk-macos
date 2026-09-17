@@ -1,2 +1,2 @@
-# KakaoTalk 26.7.0 (1194), verified locally
-7bc875de46be77edfcf663f4b112a5e3d8e9d88495ba85aae8016cf5b4223b14
+# KakaoTalk 26.8.0 (2000), verified locally
+2d47e3d6cf38e3b91e32e13b4125054075a13a15f27916b2a77531ebe0a92036

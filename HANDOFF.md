@@ -141,7 +141,9 @@ DUAL_KAKAOTALK_ARCHS=arm64 ./Scripts/build-release.sh
 ## 7. 이어서 할 만한 일
 
 1. **아이콘 색 튜닝** — 사용자가 농도를 바꾸고 싶다고 하면
-   `AppIconRecolorer.swift`의 `saturationCap`, `luminanceScale` 두 값만 조정하고 재빌드.
+   `AppIconRecolorer.swift`의 `saturationCap`, `luminanceScale` 두 값만 조정하고 재빌드 후 재설치.
+   (설치 프로그램의 "변경 없음" 판정은 `Assets.car`뿐 아니라 아이콘 파일도 비교하므로,
+   아이콘만 바뀌어도 재설치가 정상 진행됨 — `installedIconMatchesStaged` 참고)
 2. **upstream PR** — `hubeen/dual-kakaotalk-macos`에 기여할지 사용자에게 확인.
    보낼 경우 이 `HANDOFF.md`를 먼저 삭제할 것.
 3. **자동 업데이트** — 사용자가 원하면. 설계는 이미 검토함:
